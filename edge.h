@@ -9,7 +9,7 @@ class Edge {
         typedef typename G::E E;
         typedef typename G::node node;
 
-        node* nodes[2]; //Los dos nodos que conecta mirarlo asi: Node* start, Node* end
+        node* nodes[2];
 
         Edge(E peso, node* node1, node* node2):data(peso){
             nodes[0]=node1;

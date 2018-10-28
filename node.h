@@ -10,7 +10,6 @@ class Node {
         typedef typename G::EdgeSeq EdgeSeq;
 
         EdgeSeq edges; //lista de adyacencia, list de edges
-        Node* parent;
 
         Node(N value,double x, double y):data(value),x(x),y(y){}
 
@@ -30,7 +29,6 @@ class Node {
         N data; //Tipo de dato N del trait
         double x; //solo para graficar en librerias como blue
         double y; //solo para graficar en librerias como blue
-        bool visited;
 };
 
 #endif
