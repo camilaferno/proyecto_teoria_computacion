@@ -11,24 +11,24 @@ class Node {
 
         EdgeSeq edges; //lista de adyacencia, list de edges
 
-        Node(N value,double x, double y):data(value),x(x),y(y){}
+        Node(N value, bool entrada, bool salida):data(value),isEntrada(entrada),isSalida(salida){}
 
         N getNdata(){
           return data;
         }
 
-        double getXdata(){
-          return x;
+        bool getEntrada(){
+          return isEntrada;
         }
 
-        double getYdata(){
-          return y;
+        bool getSalida(){
+          return isSalida;
         }
 
     private:
         N data; //Tipo de dato N del trait
-        double x; //solo para graficar en librerias como blue
-        double y; //solo para graficar en librerias como blue
+        bool isSalida;
+        bool isEntrada;
 };
 
 #endif

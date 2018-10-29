@@ -8,9 +8,7 @@
 #include <string>
 #include <fstream>
 #include <limits.h>
-#include <map>
-#include <queue>
-#include <stack>
+#include <set>
 
 #include "node.h"
 #include "edge.h"
@@ -43,28 +41,29 @@ class Graph {
 
 
     public:
+        Graph():nodes(0){}
         Graph(string file):nodes(0){
 					ifstream infile(file);
 					int numNodos,peso;
 					N nombre,nodo1,nodo2;
-					double x,y;
+          bool entrada,salida;
 					infile >> numNodos;
 					for(int i = 0;i < numNodos ; i++){
-						infile >> nombre >> x >> y;
-						insertNode(nombre,x,y);
+						infile >> nombre >> entrada >> salida;
+						insertNode(nombre,entrada,salida);
 					}
 					while(infile >> peso >> nodo1 >> nodo2){
             insertEdge(peso,nodo1,nodo2);
 					}
 				}
 
-        void insertNode(N value, double x,double y){
+        void insertNode(N value, bool entrada, bool salida){
           for(int i=0; i < nodes.size(); i++){
               if(value == nodes[i]->getNdata()){
                   return;
               }
           }
-          node* NewNodo = new node(value,x,y);
+          node* NewNodo = new node(value,entrada,salida);
           nodes.push_back(NewNodo);
         }
 
@@ -119,6 +118,8 @@ class Graph {
         void print(){
     				if (!nodes.size()) {cout<<"No hay nodos\n"; return;}
             for(auto ni: nodes){
+                if(ni->getEntrada()){cout << "->";}
+                if(ni->getSalida()){cout << " *";}
                 cout << ni->getNdata() << "| ";
                 for(auto item: ni->edges){
                     cout << item->nodes[1]->getNdata() <<":"<<item->getEdata()<<' ';
