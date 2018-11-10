@@ -161,6 +161,9 @@ class Graph {
 								newNode1.erase(remove(newNode1.begin(), newNode1.end(), '?'), newNode1.end());
 							}
 
+							sort(newNode1.begin(), newNode1.end());
+							sort(newNode2.begin(), newNode2.end());
+
 							bool isSalida1=false;
 							for(auto& salidas: setSalida){
 						    if(newNode1.find(salidas) != string::npos){ //si dentro de newNode1 hay un elemento de salida
@@ -169,7 +172,7 @@ class Graph {
 						      break;
 						    }
 						  }
-							if(!isSalida1){ convertedToDFA.insertNode(newNode1, false, false);}
+							if(!isSalida1){ cout << "n1"; convertedToDFA.insertNode(newNode1, false, false);}
 
 							bool isSalida2=false;
 							for(auto& salidas: setSalida){
@@ -179,7 +182,10 @@ class Graph {
 						      break;
 						    }
 						  }
-							if(!isSalida2){ convertedToDFA.insertNode(newNode2, false, false);}
+							if(!isSalida2){ cout << "n2"; convertedToDFA.insertNode(newNode2, false, false);}
+
+							cout << newNode1 << " " << newNode2;
+							cout << convertedToDFA.nodes.size();
 
 							convertedToDFA.insertEdge(0, (*ni)->getNdata(), newNode1);
 							convertedToDFA.insertEdge(1, (*ni)->getNdata(), newNode2);
@@ -202,15 +208,23 @@ class Graph {
 						}
 						bool a=false;
 						for(ni=nodes.begin();ni!=nodes.end();++ni){
-
-							if((*ni)->getNdata()==myqueue.front() && !myqueue.empty()){
+							string current;
+							if(!myqueue.empty()){current=myqueue.front();}
+							string firstNode=(*ni)->getNdata();
+							if(((*ni)->getNdata()==myqueue.front() && !myqueue.empty()) || (current.find(firstNode) != string::npos && !myqueue.empty())){
 								a=true;
-								for(ei=(*ni)->edges.begin(); ei!=(*ni)->edges.end(); ei++){
-									if((*ei)->getEdata()==0){
-										newNode1+=(*ei)->nodes[1]->getNdata();
-									}
-									if((*ei)->getEdata()==1){
-										newNode2+=(*ei)->nodes[1]->getNdata();
+
+								if(current.size()>1){ //Si se necesita union
+									unionOfStates(newNode1, newNode2, current);
+								}
+								else{
+									for(ei=(*ni)->edges.begin(); ei!=(*ni)->edges.end(); ei++){
+										if((*ei)->getEdata()==0){
+											newNode1+=(*ei)->nodes[1]->getNdata();
+										}
+										if((*ei)->getEdata()==1){
+											newNode2+=(*ei)->nodes[1]->getNdata();
+										}
 									}
 								}
 
@@ -220,6 +234,9 @@ class Graph {
 								if(newNode1.find("?") != string::npos && newNode1.size()>1){
 									newNode1.erase(remove(newNode1.begin(), newNode1.end(), '?'), newNode1.end());
 								}
+
+								sort(newNode1.begin(), newNode1.end());
+								sort(newNode2.begin(), newNode2.end());
 
 								if(find(convertedToDFA.nodes.begin(), convertedToDFA.nodes.end(), convertedToDFA.findNode(newNode1)) == convertedToDFA.nodes.end()){ //if newNode1 is not in the nodes vector
 									bool isSalida1=false;
@@ -249,13 +266,15 @@ class Graph {
 
 								convertedToDFA.insertEdge(0, myqueue.front(), newNode1);
 								convertedToDFA.insertEdge(1, myqueue.front(), newNode2);
-								cout << myqueue.front() << " ";
+								newNode1="?";
+								newNode2="?";
 								myqueue.pop();
 							}
 
 						}
-						if(a==false){cout << myqueue.front(); myqueue.pop();};
+						//if(a==false){cout << myqueue.front(); myqueue.pop();};
 					}
+					//mockfunct();
 
 					convertedToDFA.print();
 					return convertedToDFA;
@@ -284,6 +303,32 @@ class Graph {
 
 					transpose.print();
 				 	return transpose;
+				}
+
+				void unionOfStates(string &newNode1, string &newNode2, string current){
+				  for(int i=0; i<current.size(); i++){
+				    string character = current.substr(i, 1);
+				    for(auto nodeit=nodes.begin();nodeit!=nodes.end();++nodeit){
+				    	if(character==(*nodeit)->getNdata()){
+				    		for(ei=(*nodeit)->edges.begin(); ei!=(*nodeit)->edges.end(); ei++){
+				    			if((*ei)->getEdata()==0){
+				    				newNode1+=(*ei)->nodes[1]->getNdata();
+				    			}
+				    			if((*ei)->getEdata()==1){
+				    				newNode2+=(*ei)->nodes[1]->getNdata();
+				    			}
+				    		}
+				    	}
+				    }
+				  }
+				}
+
+				void mockfunct(){
+					string newNode1="?";
+					string newNode2="?";
+					string current="ABCDE";
+					unionOfStates(newNode1, newNode2, current);
+					cout << endl << "newnode1: " << newNode1 << "newnode2: " << newNode2;
 				}
 
         void print(){
