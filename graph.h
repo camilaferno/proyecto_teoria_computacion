@@ -278,17 +278,19 @@ struct Automata {
                 }
             }
         }
-        cout << "  ";
-        for (int i = 0; i < numberOfStates; i++)
-            cout << states[i]->data << " ";
-        cout << endl;
+        cout << "Equivalencia: " << endl;
         for (int i = 0; i < numberOfStates; i++) {
-            cout << states[i]->data << " ";
+            if (i > 0)
+              cout << states[i]->data << " ";
             for (int j = 0; j < i; j++) {
                 cout << matrix[i][j] << " ";
             }
             cout << endl;
         }
+        cout << "  ";
+        for (int i = 0; i < numberOfStates; i++)
+            cout << states[i]->data << " ";
+        cout << endl;
     };
 
 	Automata* NFAtoDFA(){
@@ -529,29 +531,176 @@ struct Automata {
 		return brzozowski;
 	}
 
-	void printDFA()
-  {
-      cout << numberOfStates << " " << initState->data << " " << numberOfFinalStates << " ";
+  struct PairOfStates
+    {
+        state* first;
+        state* second;
+        vector<PairOfStates*> dependencies;
+        string data;
 
-      for (si = finalStates.begin(); si != finalStates.end(); ++si)
-      {
-          cout << (*si)->data;
-          if (si != finalStates.end()) cout << " ";
-          cout << endl;
-      }
+        PairOfStates(state* newFirst, state* newSecond): first(newFirst), second(newSecond) {
+            data = newFirst->data + newSecond->data;
+        };
 
-      for(size_t i = 0; i < states.size(); i++)
+        void addDependency(state* first, state* second)
+        {
+            PairOfStates* newPair = new PairOfStates(first, second);
+            dependencies.push_back(newPair);
+        }
+    };
+
+    PairOfStates* findPairOfStates(state* first, state* second, vector<PairOfStates*> &where)
+    {
+        for(size_t i = 0; i < where.size(); i++)
+        {
+            if (where[i]->first == first && where[i]->second == second) return where[i];
+        }
+        return nullptr;
+    }
+
+    void equivalence_improved()
+    {
+        vector<vector<bool>> distinctMatrix(numberOfStates, vector<bool>(numberOfStates,1));
+        vector<PairOfStates*> pairs;
+        queue<PairOfStates*> pairQueue;
+        map<state*, int> stateLocation;
+
+
+        for(size_t i = 0; i < numberOfStates; i++)
+        {
+            stateLocation[states[i]] = i;
+            for(size_t j = 0; j < numberOfStates; j++)
+            {
+                PairOfStates* newPair = new PairOfStates(states[i], states[j]);
+                pairs.push_back(newPair);
+            }
+        }
+
+        for(size_t i = 0; i < pairs.size(); i++)
+        {
+            PairOfStates* &pair = pairs[i];
+            PairOfStates* dependency0 = findPairOfStates(pairs[i]->first->transitions[0]->stateEnd, pairs[i]->second->transitions[0]->stateEnd, pairs);
+            PairOfStates* dependency1 = findPairOfStates(pairs[i]->first->transitions[1]->stateEnd, pairs[i]->second->transitions[1]->stateEnd, pairs);
+
+            if (dependency0) pair->dependencies.push_back(dependency0);
+            else pair->addDependency(pairs[i]->first->transitions[0]->stateEnd, pairs[i]->second->transitions[0]->stateEnd);
+
+            if (dependency1) pair->dependencies.push_back(dependency1);
+            else pair->addDependency(pairs[i]->first->transitions[1]->stateEnd, pairs[i]->second->transitions[1]->stateEnd);
+
+        }
+
+        // Inicializa con 1 los pares (p,q) donde p es estado final y q no
+        for(size_t i = 0; i < numberOfStates; i++)
+        {
+            if (findState(states[i], finalStates))
+            {
+                for(size_t j = 0; j < numberOfStates; j++)
+                {
+                    if (states[j] != states[i] || findState(states[j], finalStates) == 0)
+                    {
+                        distinctMatrix[i][j] = 0;
+                        distinctMatrix[j][i] = 0;
+                    }
+                }
+            }
+        }
+
+        for (size_t i = 0; i < pairs.size(); i++)
+        {
+            PairOfStates* &pair = pairs[i];
+            int pairFirstLocation = stateLocation[pair->first];
+            int pairSecondLocation = stateLocation[pair->second];
+
+            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
+            {
+                vector<PairOfStates*> &listOfDependencies = pair->dependencies;
+                for (size_t j = 0; j < listOfDependencies.size(); j++)
+                {
+                    PairOfStates* &currentDependency = listOfDependencies[j];
+                    int depFirstLocation = stateLocation[currentDependency->first];
+                    int depSecondLocation = stateLocation[currentDependency->second];
+
+                    if (distinctMatrix[depFirstLocation][depSecondLocation] == 1 && depFirstLocation != depSecondLocation)
+                    {
+                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = 0;
+                        pairQueue.push(currentDependency);
+                    }
+                }
+                break;
+            }
+        }
+        while (!pairQueue.empty())
+        {
+            PairOfStates* pair = pairQueue.front();
+            int pairFirstLocation = stateLocation[pair->first];
+            int pairSecondLocation = stateLocation[pair->second];
+
+            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
+            {
+                vector<PairOfStates*> &listOfDependencies = pair->dependencies;
+                for (size_t j = 0; j < listOfDependencies.size(); j++)
+                {
+                    PairOfStates* &currentDependency = listOfDependencies[j];
+                    int depFirstLocation = stateLocation[currentDependency->first];
+                    int depSecondLocation = stateLocation[currentDependency->second];
+
+                    if (distinctMatrix[depFirstLocation][depSecondLocation] == 1 && depFirstLocation != depSecondLocation)
+                    {
+                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = 0;
+                        pairQueue.push(currentDependency);
+                    }else
+                    {
+                        if (!pairQueue.empty())pairQueue.pop();
+                    }
+                }
+            }
+
+        }
+
+        for(size_t i = 0; i < numberOfStates; i++)
+        {
+            cout << states[i]->data << " ";
+            for(size_t j = 0; j <= i; j++)
+            {
+                cout << distinctMatrix[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+        cout << "  ";
+        for(size_t i = 0; i < numberOfStates; i++)
+        {
+            cout << states[i]->data << " ";
+        }
+        cout << endl;
+
+    }
+
+
+    void print()
       {
-          for(size_t j = 0; j < states[i]->transitions.size(); j++)
+          cout << numberOfStates << " " << initState->data << " " << numberOfFinalStates << " ";
+
+          for (si = finalStates.begin(); si != finalStates.end(); ++si)
           {
-              cout << states[i]->transitions[j]->stateBegin->data << " ";
-              cout << states[i]->transitions[j]->transitionChar << " ";
-              cout << states[i]->transitions[j]->stateEnd->data << " ";
-              cout << endl;
-          }
-      }
+              cout << (*si)->data;
+              if (si != finalStates.end()) cout << " ";
 
-  }
+          }
+          cout << endl;
+          for(size_t i = 0; i < states.size(); i++)
+          {
+              for(size_t j = 0; j < states[i]->transitions.size(); j++)
+              {
+                  cout << states[i]->transitions[j]->stateBegin->data << " ";
+                  cout << states[i]->transitions[j]->transitionChar << " ";
+                  if (states[i]->transitions[j]->stateEnd) cout << states[i]->transitions[j]->stateEnd->data << " ";
+                  cout << endl;
+              }
+          }
+
+      }
 
 	void printNFA()
 	{
@@ -580,6 +729,7 @@ struct Automata {
 
 
 	}
+
 
 };
 
