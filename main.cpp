@@ -5,10 +5,12 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-	graph G("graph_construct3.txt");
-  G.print();
+	automata* A = new automata("graph_construct.txt");
+  A->printDFA();
 	cout << endl;
+	//A->getTranspose();
+	//cout << endl;
+	A->Brzozowski();
 
-	G.NFAtoDFA();
 	return 0;
 }
