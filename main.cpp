@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
 	//A->getTranspose();
 	//cout << endl;
 	A->Brzozowski();
-
+	//A->Equivalencia();
 	//A->renombramiento();
 
 	return 0;

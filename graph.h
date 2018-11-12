@@ -206,6 +206,7 @@ struct Automata {
 		transpose->numberOfFinalStates=finalStates.size();
 		transpose->initState=finalStates.front();
 
+    cout << "Transpuesto: " << endl;
 		transpose->printNFA();
 		cout << endl;
 		return transpose;
@@ -228,6 +229,67 @@ struct Automata {
 	    }
 	  }
 	}
+
+  void Equivalencia(){
+        vector<vector<bool>> matrix(numberOfStates, vector<bool>(numberOfStates,1));
+        for (int i = 0; i < numberOfStates; i++){
+            if (find(finalStates.begin(), finalStates.end(),states[i]) != finalStates.end()){
+                for (int j = 0; j < numberOfStates; j++){
+                    if (find(finalStates.begin(), finalStates.end(),states[j]) == finalStates.end())
+                        matrix[i][j] = matrix[j][i] = 0;
+                }
+            }
+        }
+        bool change = 1;
+        while(change){
+            change = 0;
+            for (int i = 0; i < numberOfStates; i++) {
+                for (int j = 0; j < numberOfStates; j++) {
+                    if (matrix[i][j] == 1)
+                    {
+                        int in, jn;
+                        for (in = 0; in < numberOfStates; in++){
+                            if (states[i] -> transitions[0] -> stateEnd == states[in])
+                                break;
+                        }
+                        for (jn = 0; jn < numberOfStates; jn++){
+                            if (states[j] -> transitions[0] -> stateEnd == states[jn])
+                                break;
+                        }
+                        if (matrix[in][jn] == 0){
+                            matrix[i][j] = 0;
+                            change = 1;
+                        }
+                        else {
+                            for (in = 0; in < numberOfStates; in++){
+                                if (states[i] -> transitions[1] -> stateEnd == states[in])
+                                    break;
+                            }
+                            for (jn = 0; jn < numberOfStates; jn++){
+                                if (states[j] -> transitions[1] -> stateEnd == states[jn])
+                                    break;
+                            }
+                            if (matrix[in][jn] == 0){
+                                matrix[i][j] = 0;
+                                change = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        cout << "  ";
+        for (int i = 0; i < numberOfStates; i++)
+            cout << states[i]->data << " ";
+        cout << endl;
+        for (int i = 0; i < numberOfStates; i++) {
+            cout << states[i]->data << " ";
+            for (int j = 0; j < i; j++) {
+                cout << matrix[i][j] << " ";
+            }
+            cout << endl;
+        }
+    };
 
 	Automata* NFAtoDFA(){
 		Automata* convertedToDFA = new Automata();
@@ -359,7 +421,7 @@ struct Automata {
 					sort(newNode1.begin(), newNode1.end());
 					sort(newNode2.begin(), newNode2.end());
 
-          cout << "Current: " << current << " NewNode1: " << newNode1 << " NewNode2: " << newNode2 << endl;
+          // cout << "Current: " << current << " NewNode1: " << newNode1 << " NewNode2: " << newNode2 << endl;
 
 					if(!convertedToDFA->isState(newNode1)){ //if newNode1 is not in the nodes vector
             bool isSalida1=false;
@@ -403,12 +465,12 @@ struct Automata {
 			}
 		}
 
-    while (!renamedTo.empty())
-    {
-      std::cout << renamedTo.begin()->first << " => " << renamedTo.begin()->second << '\n';
-      renamedTo.erase(renamedTo.begin());
-    }
-
+    // while (!renamedTo.empty())
+    // {
+    //   std::cout << renamedTo.begin()->first << " => " << renamedTo.begin()->second << '\n';
+    //   renamedTo.erase(renamedTo.begin());
+    // }
+    cout << "NFA to DFA: " << endl;
 		convertedToDFA->printNFA();
     cout << endl;
 		return convertedToDFA;
@@ -452,18 +514,19 @@ struct Automata {
     }
   }
 
-	void Brzozowski(){
+	Automata* Brzozowski(){
 		Automata* brzozowski = new Automata();
     Automata* renamed = new Automata;
 
     renamed=(getTranspose()->NFAtoDFA())->getTranspose();
     renombramiento(renamed);
     cout << endl;
+    cout << "Renamed: " << endl;
     renamed->printNFA();
     cout << endl;
-    renamed->NFAtoDFA();
+    brzozowski=renamed->NFAtoDFA();
 
-		//return brzozowski;
+		return brzozowski;
 	}
 
 	void printDFA()
@@ -517,59 +580,6 @@ struct Automata {
 
 
 	}
-
-				//
-				// self getTranspose(){
-				//  	self transpose;
-				//
-				//  	for(ni=nodes.begin();ni!=nodes.end();++ni){
-				// 		if((*ni)->getEntrada()){ //si el nodo es entrada se vuelve salida
-				// 			transpose.insertNode((*ni)->getNdata(), false, true);
-				// 		}
-				// 		else if((*ni)->getSalida()){ //si el nodo es salida se vuelve entrada
-				// 			transpose.insertNode((*ni)->getNdata(), true, false);
-				// 		}
-				//  		else{
-				// 			transpose.insertNode((*ni)->getNdata(),false, false);
-				// 		}
-				//  	}
-				//
-				//  	for(ni=nodes.begin();ni!=nodes.end();++ni){
-				//  		for(ei=(*ni)->edges.begin(); ei!=(*ni)->edges.end(); ++ei){
-				//  			transpose.insertEdge((*ei)->getEdata(), (*ei)->nodes[1]->getNdata(), (*ei)->nodes[0]->getNdata());
-				//  		}
-				//  	}
-				//
-				// 	transpose.print();
-				//  	return transpose;
-				// }
-				//
-				// void unionOfStates(string &newNode1, string &newNode2, string current){
-				//   for(int i=0; i<current.size(); i++){
-				//     string character = current.substr(i, 1);
-				//     for(auto nodeit=nodes.begin();nodeit!=nodes.end();++nodeit){
-				//     	if(character==(*nodeit)->getNdata()){
-				//     		for(ei=(*nodeit)->edges.begin(); ei!=(*nodeit)->edges.end(); ei++){
-				//     			if((*ei)->getEdata()==0){
-				//     				newNode1+=(*ei)->nodes[1]->getNdata();
-				//     			}
-				//     			if((*ei)->getEdata()==1){
-				//     				newNode2+=(*ei)->nodes[1]->getNdata();
-				//     			}
-				//     		}
-				//     	}
-				//     }
-				//   }
-				// }
-				//
-				// void mockfunct(){
-				// 	string newNode1="?";
-				// 	string newNode2="?";
-				// 	string current="ABCDE";
-				// 	unionOfStates(newNode1, newNode2, current);
-				// 	cout << endl << "newnode1: " << newNode1 << "newnode2: " << newNode2;
-				// }
-
 
 };
 
