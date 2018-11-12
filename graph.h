@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <set>
 #include <queue>
+#include <map>
 
 #include "state.h"
 #include "transition.h"
@@ -37,6 +38,7 @@ struct Automata {
 	int numberOfStates, numberOfFinalStates;
 	state* initState;
 	StateSeq states, initStates, finalStates;
+  map<string, string> renamedTo;
 
   StateIte si;
   TransitionIte ti;
@@ -125,6 +127,13 @@ struct Automata {
 		return false;
   }
 
+  bool isFinalState(S data){
+    for(si = finalStates.begin(); si!=finalStates.end(); ++si){
+			if((*si)->data == data){return true;}
+		}
+		return false;
+  }
+
 	state* findState(S data)
 	{
 			bool found=false;
@@ -202,27 +211,29 @@ struct Automata {
 		return transpose;
 	}
 
-	// void unionOfStates(string &newNode1, string &newNode2, string current){
-	//   for(int i=0; i<current.size(); i++){
-	//     string character = current.substr(i, 1);
-	//     for(auto stateit=states.begin(); stateit!=states.end(); ++stateit){
-	//     	if(character==(*stateit)->getNdata()){
-	//     		for(ti=(*stateit)->transitions.begin(); ti!=(*stateit)->transitions.end(); ti++){
-	//     			if((*ei)->getEdata()==0){
-	//     				newNode1+=(*ei)->nodes[1]->getNdata();
-	//     			}
-	//     			if((*ei)->getEdata()==1){
-	//     				newNode2+=(*ei)->nodes[1]->getNdata();
-	//     			}
-	//     		}
-	//     	}
-	//     }
-	//   }
-	// }
+	void unionOfStates(string &newNode1, string &newNode2, string current){
+	  for(int i=0; i<current.size(); i++){
+	    string character = current.substr(i, 1);
+	    for(auto stateit=states.begin(); stateit!=states.end(); ++stateit){
+	    	if(character==(*stateit)->data){
+	    		for(ti=(*stateit)->transitions.begin(); ti!=(*stateit)->transitions.end(); ti++){
+	    			if((*ti)->transitionChar=="0"){
+	    				newNode1+=(*ti)->stateEnd->data;
+	    			}
+	    			if((*ti)->transitionChar=="1"){
+	    				newNode2+=(*ti)->stateEnd->data;
+	    			}
+	    		}
+	    	}
+	    }
+	  }
+	}
 
 	Automata* NFAtoDFA(){
 		Automata* convertedToDFA = new Automata();
 		queue<S> myqueue;
+    set<S> AddedToQueue;
+
 		string newNode1="?";
 		string newNode2="?";
 
@@ -234,7 +245,9 @@ struct Automata {
 		}
 
 		for(auto it=states.begin(); it!=states.end(); it++){
+      bool found=false;
 			if(isInitState((*it)->data)){
+        found=true;
 				for(ti=(*it)->transitions.begin(); ti!=(*it)->transitions.end(); ti++){ //Suma los nombres de los estados
 					if((*ti)->transitionChar=="0"){
 						newNode1+=(*ti)->stateEnd->data;
@@ -254,128 +267,201 @@ struct Automata {
 				sort(newNode1.begin(), newNode1.end());
 				sort(newNode2.begin(), newNode2.end());
 
-				bool isSalida1=false;
-				for(auto& salida: finalStates){
-			    if(newNode1.find((salida)->data) != string::npos){ //si dentro de newNode1 hay un elemento de salida
-			      convertedToDFA->addState(newNode1);
-						convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode1));
-						convertedToDFA->numberOfFinalStates+=1;
-						convertedToDFA->numberOfStates+=1;
-						isSalida1=true;
-			      break;
-			    }
-			  }
-				if(!isSalida1){convertedToDFA->numberOfStates+=1; convertedToDFA->addState(newNode1);}
+        if(!convertedToDFA->isState(newNode1)){
+          bool isSalida1=false;
+  				for(auto& salida: finalStates){
+  			    if(newNode1.find((salida)->data) != string::npos){ //si dentro de newNode1 hay un elemento de salida
+  			      convertedToDFA->addState(newNode1);
+  						convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode1));
+  						convertedToDFA->numberOfFinalStates+=1;
+  						convertedToDFA->numberOfStates+=1;
+  						isSalida1=true;
+  			      break;
+  			    }
+  			  }
+  				if(!isSalida1){convertedToDFA->numberOfStates+=1; convertedToDFA->addState(newNode1);}
+        }
 
-				bool isSalida2=false;
-				for(auto& salida: finalStates){
-			    if(newNode2.find((salida)->data) != string::npos){ //si dentro de newNode1 hay un elemento de salida
-						convertedToDFA->addState(newNode2);
-						convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
-						convertedToDFA->numberOfFinalStates+=1;
-						convertedToDFA->numberOfStates+=1;
-						isSalida1=true;
-			      break;
-			    }
-			  }
-				if(!isSalida2){convertedToDFA->numberOfStates+=1; convertedToDFA->addState(newNode2);}
+        if(!convertedToDFA->isState(newNode2)){
+          bool isSalida2=false;
+  				for(auto& salida: finalStates){
+  			    if(newNode2.find((salida)->data) != string::npos){ //si dentro de newNode1 hay un elemento de salida
+  						convertedToDFA->addState(newNode2);
+  						convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
+  						convertedToDFA->numberOfFinalStates+=1;
+  						convertedToDFA->numberOfStates+=1;
+  						isSalida2=true;
+  			      break;
+  			    }
+  			  }
+  				if(!isSalida2){convertedToDFA->numberOfStates+=1; convertedToDFA->addState(newNode2);}
+        }
 
 				(convertedToDFA->findState((*it)->data))->addTransition("0", convertedToDFA->findState((*it)->data), convertedToDFA->findState(newNode1));
 				(convertedToDFA->findState((*it)->data))->addTransition("1", convertedToDFA->findState((*it)->data), convertedToDFA->findState(newNode2));
 
 			}
 
+      if(found==true){
+        if(AddedToQueue.find(newNode1)==AddedToQueue.end() && !isInitState(newNode1)){
+          myqueue.push(newNode1);
+          AddedToQueue.insert(newNode1);
+        }
+        if(AddedToQueue.find(newNode2)==AddedToQueue.end() && !isInitState(newNode2)){
+          myqueue.push(newNode2);
+          AddedToQueue.insert(newNode2);
+        }
+        newNode1="?";
+        newNode2="?";
+      }
 		}
 
-		// myqueue.push(newNode1);
-		// newNode1.clear(); //maybe we dont need this
-		// myqueue.push(newNode2);
-		// newNode2.clear();
+		newNode1.clear(); //maybe we dont need this
+		newNode2.clear();
 
-		// while(!myqueue.empty()){
-		// 	newNode1="?";
-		// 	newNode2="?";
-		// 	if(myqueue.front()=="?" && !myqueue.empty()){
-		// 		convertedToDFA.insertEdge(0, "?", "?");
-		// 		convertedToDFA.insertEdge(1, "?", "?");
-		// 		myqueue.pop();
-		// 	}
-		// 	bool a=false;
-		// 	for(ni=nodes.begin();ni!=nodes.end();++ni){
-		// 		string current;
-		// 		if(!myqueue.empty()){current=myqueue.front();}
-		// 		string firstNode=(*ni)->getNdata();
-		// 		if(((*ni)->getNdata()==myqueue.front() && !myqueue.empty()) || (current.find(firstNode) != string::npos && !myqueue.empty())){
-		// 			a=true;
-		//
-		// 			if(current.size()>1){ //Si se necesita union
-		// 				unionOfStates(newNode1, newNode2, current);
-		// 			}
-		// 			else{
-		// 				for(ei=(*ni)->edges.begin(); ei!=(*ni)->edges.end(); ei++){
-		// 					if((*ei)->getEdata()==0){
-		// 						newNode1+=(*ei)->nodes[1]->getNdata();
-		// 					}
-		// 					if((*ei)->getEdata()==1){
-		// 						newNode2+=(*ei)->nodes[1]->getNdata();
-		// 					}
-		// 				}
-		// 			}
-		//
-		// 			if(newNode2.find("?") != string::npos && newNode2.size()>1){
-		// 				newNode2.erase(remove(newNode2.begin(), newNode2.end(), '?'), newNode2.end());
-		// 			}
-		// 			if(newNode1.find("?") != string::npos && newNode1.size()>1){
-		// 				newNode1.erase(remove(newNode1.begin(), newNode1.end(), '?'), newNode1.end());
-		// 			}
-		//
-		// 			sort(newNode1.begin(), newNode1.end());
-		// 			sort(newNode2.begin(), newNode2.end());
-		//
-		// 			if(find(convertedToDFA.nodes.begin(), convertedToDFA.nodes.end(), convertedToDFA.findNode(newNode1)) == convertedToDFA.nodes.end()){ //if newNode1 is not in the nodes vector
-		// 				bool isSalida1=false;
-		// 				for(auto& salidas: setSalida){
-		// 			    if(newNode1.find(salidas) != string::npos){ //si dentro de newNode1 hay un elemento de salida
-		// 			      convertedToDFA.insertNode(newNode1, false, true);
-		// 						isSalida1=true;
-		// 			      break;
-		// 			    }
-		// 			  }
-		// 				if(!isSalida1){ convertedToDFA.insertNode(newNode1, false, false);}
-		// 				myqueue.push(newNode1);
-		// 			}
-		//
-		// 			if(find(convertedToDFA.nodes.begin(), convertedToDFA.nodes.end(), convertedToDFA.findNode(newNode2)) == convertedToDFA.nodes.end()){//if newNode2 is not in the nodes vector
-		// 				bool isSalida2=false;
-		// 				for(auto& salidas: setSalida){
-		// 			    if(newNode2.find(salidas) != string::npos){ //si dentro de newNode1 hay un elemento de salida
-		// 			      convertedToDFA.insertNode(newNode2, false, true);
-		// 						isSalida2=true;
-		// 			      break;
-		// 			    }
-		// 			  }
-		// 				if(!isSalida2){ convertedToDFA.insertNode(newNode2, false, false);}
-		// 				myqueue.push(newNode2);
-		// 			}
-		//
-		// 			convertedToDFA.insertEdge(0, myqueue.front(), newNode1);
-		// 			convertedToDFA.insertEdge(1, myqueue.front(), newNode2);
-		// 			newNode1="?";
-		// 			newNode2="?";
-		// 			myqueue.pop();
-		// 		}
-		//
-		// 	}
-		// }
+		while(!myqueue.empty()){
+			newNode1="?";
+			newNode2="?";
+			if(myqueue.front()=="?" && !myqueue.empty()){
+        state* vacio=convertedToDFA->findState("?");
+        vacio->addTransition("0", vacio, vacio);
+				vacio->addTransition("1", vacio, vacio);
+				myqueue.pop();
+			}
+
+	 	  for(auto it=states.begin(); it!=states.end(); it++){
+				string current;
+				if(!myqueue.empty()){current=myqueue.front();}
+				string firstState=(*it)->data;
+				if(((*it)->data==myqueue.front() && !myqueue.empty()) || (current.find(firstState) != string::npos && !myqueue.empty())){
+
+					if(current.size()>1){ //Si se necesita union
+						unionOfStates(newNode1, newNode2, current);
+					}
+					else{
+						for(ti=(*it)->transitions.begin(); ti!=(*it)->transitions.end(); ti++){
+							if((*ti)->transitionChar=="0"){
+								newNode1+=(*ti)->stateEnd->data;
+							}
+							if((*ti)->transitionChar=="1"){
+								newNode2+=(*ti)->stateEnd->data;
+							}
+						}
+					}
+
+					if(newNode2.find("?") != string::npos && newNode2.size()>1){
+						newNode2.erase(remove(newNode2.begin(), newNode2.end(), '?'), newNode2.end());
+					}
+					if(newNode1.find("?") != string::npos && newNode1.size()>1){
+						newNode1.erase(remove(newNode1.begin(), newNode1.end(), '?'), newNode1.end());
+					}
+
+					sort(newNode1.begin(), newNode1.end());
+					sort(newNode2.begin(), newNode2.end());
+
+          cout << "Current: " << current << " NewNode1: " << newNode1 << " NewNode2: " << newNode2 << endl;
+
+					if(!convertedToDFA->isState(newNode1)){ //if newNode1 is not in the nodes vector
+            bool isSalida1=false;
+            for(auto& salida: finalStates){
+              if(newNode1.find((salida)->data) != string::npos){ //si dentro de newNode1 hay un elemento de salida
+                convertedToDFA->addState(newNode1);
+                convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode1));
+                convertedToDFA->numberOfFinalStates+=1;
+                convertedToDFA->numberOfStates+=1;
+                isSalida1=true;
+                break;
+              }
+            }
+            if(!isSalida1){convertedToDFA->numberOfStates+=1; convertedToDFA->addState(newNode1);}
+						myqueue.push(newNode1);
+					}
+
+					if(!convertedToDFA->isState(newNode2)){//if newNode2 is not in the nodes vector
+            bool isSalida1=false;
+            for(auto& salida: finalStates){
+              if(newNode2.find((salida)->data) != string::npos){ //si dentro de newNode1 hay un elemento de salida
+                convertedToDFA->addState(newNode2);
+                convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
+                convertedToDFA->numberOfFinalStates+=1;
+                convertedToDFA->numberOfStates+=1;
+                isSalida1=true;
+                break;
+              }
+            }
+            if(!isSalida1){convertedToDFA->numberOfStates+=1; convertedToDFA->addState(newNode2);}
+						myqueue.push(newNode2);
+					}
+
+          (convertedToDFA->findState(myqueue.front()))->addTransition("0", convertedToDFA->findState(myqueue.front()), convertedToDFA->findState(newNode1));
+          (convertedToDFA->findState(myqueue.front()))->addTransition("1", convertedToDFA->findState(myqueue.front()), convertedToDFA->findState(newNode2));
+					newNode1="?";
+					newNode2="?";
+					myqueue.pop();
+				}
+
+			}
+		}
+
+    while (!renamedTo.empty())
+    {
+      std::cout << renamedTo.begin()->first << " => " << renamedTo.begin()->second << '\n';
+      renamedTo.erase(renamedTo.begin());
+    }
 
 		convertedToDFA->printNFA();
+    cout << endl;
 		return convertedToDFA;
 	}
 
-	void Brzozowski(){
-		//Automata* brzozowski = new Automata();
+  void renombramiento(Automata* &rename){
+    string tmp="0";
+    int count=0;
 
-    getTranspose()->NFAtoDFA();
+    for(si = rename->states.begin(); si!=rename->states.end(); ++si){
+      if(((*si)->data).size()==1){
+        if(tmp < (*si)->data){
+          tmp = (*si)->data;
+        }
+      }
+    }
+    string nextLetter(1,static_cast<char>(tmp[0] + 1));
+
+    for(auto it = rename->states.begin(); it!=rename->states.end(); ++it){
+      if(((*it)->data).size()>1){
+        if(count==0){
+          rename->renamedTo.insert({(*it)->data, nextLetter});
+          if(isInitState((*it)->data)){(*it)->data=nextLetter;}
+          if(isFinalState((*it)->data)){(*it)->data=nextLetter;}
+          (*it)->data=nextLetter;
+          count=1;
+        }
+        else if(count>0){
+          string nextnextLetter(1,static_cast<char>(nextLetter[0] + count));
+          rename->renamedTo.insert({(*it)->data, nextnextLetter});
+          if(isInitState((*it)->data)){(*it)->data=nextLetter;}
+          if(isFinalState((*it)->data)){(*it)->data=nextLetter;}
+          (*it)->data=nextnextLetter;
+          count+=1;
+        }
+
+      }
+      else if(((*it)->data)=="?"){
+        (*it)->data="N";
+      }
+    }
+  }
+
+	void Brzozowski(){
+		Automata* brzozowski = new Automata();
+    Automata* renamed = new Automata;
+
+    renamed=(getTranspose()->NFAtoDFA())->getTranspose();
+    renombramiento(renamed);
+    cout << endl;
+    renamed->printNFA();
+    cout << endl;
+    renamed->NFAtoDFA();
 
 		//return brzozowski;
 	}
