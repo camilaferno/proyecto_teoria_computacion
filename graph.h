@@ -458,11 +458,11 @@ struct Automata
                 myqueue.pop();
             }
 
-            for(auto it = states.begin(); it! = states.end(); it++)
+            for(auto it = states.begin(); it!= states.end(); it++)
             {
                 string current;
 
-                if (!myqueue.empty()
+                if (!myqueue.empty())
                     current = myqueue.front();
 
                 string firstState = (*it)->data;
@@ -479,7 +479,7 @@ struct Automata
                         unionOfStates(newNode1, newNode2, current);
                     else
                     {
-                        for(ti = (*it)->transitions.begin(); ti! = (*it)->transitions.end(); ti++)
+                        for(ti = (*it)->transitions.begin(); ti != (*it)->transitions.end(); ti++)
                         {
                             if((*ti)->transitionChar == "0")
                                 newNode1 += (*ti)->stateEnd->data;
