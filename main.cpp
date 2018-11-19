@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 	// cout << endl;
 	//
 	C->print();
-	cout << endl;
+	/* cout << endl;
 	//C->Brzozowski();
 	C->getTranspose();
 	cout << endl;
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 	cout << endl;
 	C->equivalence_improved();
 	cout << endl;
-	cout << endl;
+	cout << endl; */
 
 	return 0;
 }
