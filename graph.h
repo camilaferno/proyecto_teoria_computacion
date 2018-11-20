@@ -51,7 +51,7 @@ struct Automata
     {
         vector<string> list;
         string s = string(phrase);
-        size_t pos = 0;
+        int pos = 0;
         string token;
         while ((pos = s.find(delimiter)) != string::npos)
         {
@@ -82,7 +82,7 @@ struct Automata
             initStates.push_back(initState);
             states.push_back(initState);
 
-            for(size_t i = 3; i < vectorFirstLine.size(); i++)
+            for(int i = 3; i < vectorFirstLine.size(); i++)
             {
                 state* newState = new state(vectorFirstLine[i]);
                 states.push_back(newState);
@@ -691,7 +691,7 @@ struct Automata
 
     PairOfStates* findPairOfStates(state* first, state* second, vector<PairOfStates*> &where)
     {
-        for(size_t i = 0; i < where.size(); i++)
+        for(int i = 0; i < where.size(); i++)
             if (where[i]->first == first && where[i]->second == second) return where[i];
 
         return nullptr;
@@ -705,10 +705,10 @@ struct Automata
         map<state*, int> stateLocation;
 
         // Producto cartesiano entre el vector de estados para crear cada par posible
-        for(size_t i = 0; i < numberOfStates; i++)
+        for(int i = 0; i < numberOfStates; i++)
         {
             stateLocation[states[i]] = i;
-            for(size_t j = 0; j < numberOfStates; j++)
+            for(int j = 0; j < numberOfStates; j++)
             {
                 PairOfStates* newPair = new PairOfStates(states[i], states[j]);
                 pairs.push_back(newPair);
@@ -716,7 +716,7 @@ struct Automata
         }
 
         // Asignación de dependencias para cada par
-        for(size_t i = 0; i < pairs.size(); i++)
+        for(int i = 0; i < pairs.size(); i++)
         {
             PairOfStates* &pair = pairs[i];
             PairOfStates* transitionPair0 = findPairOfStates(pairs[i]->first->transitions[0]->stateEnd,
@@ -743,11 +743,11 @@ struct Automata
         }
 
         // Inicializa con 1 los pares (p,q) donde p es estado final y q no
-        for(size_t i = 0; i < numberOfStates; i++)
+        for(int i = 0; i < numberOfStates; i++)
         {
             if (findState(states[i], finalStates))
             {
-                for(size_t j = 0; j < numberOfStates; j++)
+                for(int j = 0; j < numberOfStates; j++)
                 {
                     if (states[j] != states[i] || findState(states[j], finalStates) == 0)
                     {
@@ -759,7 +759,7 @@ struct Automata
         }
 
         bool stop = false;
-        for (size_t i = 0; i < pairs.size() && !stop; i++)
+        for (int i = 0; i < pairs.size() && !stop; i++)
         {
             PairOfStates* &pair = pairs[i];
             int pairFirstLocation = stateLocation[pair->first];
@@ -771,7 +771,7 @@ struct Automata
                 cout << "Looking at: " << pair->data << endl; 
 
                 vector<PairOfStates*> &listOfDependencies = pair->dependencies;
-                for (size_t j = 0; j < listOfDependencies.size(); j++)
+                for (int j = 0; j < listOfDependencies.size(); j++)
                 {
                     PairOfStates* &currentDependency = listOfDependencies[j];
                     int depFirstLocation = stateLocation[currentDependency->first];
@@ -812,7 +812,7 @@ struct Automata
             if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
             {
                 vector<PairOfStates*> &listOfDependencies = pair->dependencies;
-                for (size_t j = 0; j < listOfDependencies.size(); j++)
+                for (int j = 0; j < listOfDependencies.size(); j++)
                 {
                     PairOfStates* &currentDependency = listOfDependencies[j];
                     int depFirstLocation = stateLocation[currentDependency->first];
@@ -829,12 +829,12 @@ struct Automata
         }
 
         // DEBUG: Impresión en pirámide
-        /* for(size_t i = 0; i < numberOfStates; i++)
+        /* for(int i = 0; i < numberOfStates; i++)
         {
             if (i != 0)
             {
                 cout << states[i]->data << " ";
-                for(size_t j = 0; j <= i - 1; j++)
+                for(int j = 0; j <= i - 1; j++)
                 {
                     cout << distinctMatrix[i][j] << " ";
                 }
@@ -843,15 +843,15 @@ struct Automata
         }
 
         cout << "  ";
-        for(size_t i = 0; i < numberOfStates - 1; i++)
+        for(int i = 0; i < numberOfStates - 1; i++)
             cout << states[i]->data << " ";
         cout << endl; */
 
         // Impresión normal
-        for(size_t i = 0; i < numberOfStates; i++)
+        for(int i = 0; i < numberOfStates; i++)
         {
             cout << states[i]->data << " ";
-            for(size_t j = 0; j < numberOfStates; j++)
+            for(int j = 0; j < numberOfStates; j++)
             {
                 cout << distinctMatrix[i][j] << " ";
             }
@@ -859,7 +859,7 @@ struct Automata
         }
 
         cout << "  ";
-        for(size_t i = 0; i < numberOfStates; i++)
+        for(int i = 0; i < numberOfStates; i++)
             cout << states[i]->data << " ";
         cout << endl;
     }
@@ -879,9 +879,9 @@ struct Automata
         }
         cout << endl;
 
-        for(size_t i = 0; i < states.size(); i++)
+        for(int i = 0; i < states.size(); i++)
         {
-            for(size_t j = 0; j < states[i]->transitions.size(); j++)
+            for(int j = 0; j < states[i]->transitions.size(); j++)
             {
                 cout << states[i]->transitions[j]->stateBegin->data << " ";
                 cout << states[i]->transitions[j]->transitionChar << " ";
