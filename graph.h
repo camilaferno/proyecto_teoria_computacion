@@ -732,7 +732,7 @@ struct Automata
         }
 
         // DEBUG: Print pairs and its dependencies
-        for (int i = 0; i < pairs.size(); i++)
+        /* for (int i = 0; i < pairs.size(); i++)
         {
             cout << pairs[i]->data << " | ";
             for (int j = 0; j < pairs[i]->dependencies.size(); j++)
@@ -740,7 +740,7 @@ struct Automata
                 cout << pairs[i]->dependencies[j]->data << " ";
             }
             cout << endl;
-        }
+        } */
 
         // Inicializa con 1 los pares (p,q) donde p es estado final y q no
         for(int i = 0; i < numberOfStates; i++)
@@ -753,58 +753,25 @@ struct Automata
                     {
                         distinctMatrix[i][j] = 0;
                         distinctMatrix[j][i] = 0;
-                    }
-                }
-            }
-        }
-
-        bool stop = false;
-        for (int i = 0; i < pairs.size() && !stop; i++)
-        {
-            PairOfStates* &pair = pairs[i];
-            int pairFirstLocation = stateLocation[pair->first];
-            int pairSecondLocation = stateLocation[pair->second];
-
-            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
-            {
-                // DEBUG
-                cout << "Looking at: " << pair->data << endl; 
-
-                vector<PairOfStates*> &listOfDependencies = pair->dependencies;
-                for (int j = 0; j < listOfDependencies.size(); j++)
-                {
-                    PairOfStates* &currentDependency = listOfDependencies[j];
-                    int depFirstLocation = stateLocation[currentDependency->first];
-                    int depSecondLocation = stateLocation[currentDependency->second];
-
-                    if (distinctMatrix[depFirstLocation][depSecondLocation] == 1 && depFirstLocation != depSecondLocation)
-                    {
-                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = 0;
-                        cout << "Adding: " << currentDependency->data << endl;
-                        pairQueue.push(currentDependency);
-                        stop = true;
+                        pairQueue.push(findPairOfStates(states[i], states[j], pairs)); 
                     }
                 }
             }
         }
 
         // DEBUG: Queue check
-        cout << "Queue so far: " << endl;
+        /* cout << "Queue so far: " << endl;
         queue<PairOfStates*> testQ = pairQueue;
         while (!testQ.empty())
         {
             cout << (testQ.front())->data << " ";
             testQ.pop();
         }
-        cout << endl;
+        cout << endl; */
 
         while (!pairQueue.empty())
         {
             PairOfStates* pair = pairQueue.front();
-
-            // DEBUG: Pair checking in queue
-            cout << "Pair checking in queue" << endl;
-            cout << "Looking at: " << pair->data << endl;
 
             int pairFirstLocation = stateLocation[pair->first];
             int pairSecondLocation = stateLocation[pair->second];
@@ -867,8 +834,6 @@ struct Automata
 
     void print()
     {
-        //sortAllStates();
-
         cout << numberOfStates << " " << initState->data << " " << numberOfFinalStates << " ";
 
         for (si = finalStates.begin(); si != finalStates.end(); ++si)
@@ -892,7 +857,6 @@ struct Automata
                 cout << endl;
             }
         }
-
     }
 
     void printNFA()
