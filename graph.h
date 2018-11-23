@@ -699,8 +699,8 @@ struct Automata
 
     vector<vector<bool>> equivalence_improved()
     {
-        bool dist = 0;
-        bool no_dist = 1;
+        const bool dist = 0;
+        const bool no_dist = 1;
 
         vector<vector<bool>> distinctMatrix(numberOfStates, vector<bool>(numberOfStates, no_dist));
         vector<PairOfStates*> pairs;
@@ -839,6 +839,189 @@ struct Automata
     void moore()
     {
         vector<vector<bool>> distinctMatrix = equivalence_improved();
+        const bool dist = 0;
+        const bool no_dist = 1;
+        
+        vector<vector<state*>> sets;
+
+        // Armando sets
+        for (int i = 0; i < states.size(); i++)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (distinctMatrix[i][j] == no_dist)
+                {   
+                    if (sets.size() == 0)
+                    {
+                        vector<state*> newSet;
+                        newSet.push_back(states[j]);
+                        newSet.push_back(states[i]);
+                        sets.push_back(newSet);
+                    }
+                    else
+                    {
+                        bool found = false;
+                        for (int k = 0; k < sets.size() && !found; k++)
+                        {
+                            state* isStateOneInSet = findState(states[i], sets[k]);
+                            state* isStateTwoInSet = findState(states[j], sets[k]);
+                            if (isStateOneInSet != nullptr || isStateTwoInSet != nullptr)
+                            {
+                                if (isStateOneInSet == nullptr)
+                                    sets[k].push_back(states[i]);
+                                if (isStateTwoInSet == nullptr)
+                                    sets[k].push_back(states[j]);
+                                found = true;
+                            }
+                        }
+                        if (!found)
+                        {
+                            vector<state*> newSet;
+                            newSet.push_back(states[j]);
+                            newSet.push_back(states[i]);
+                            sets.push_back(newSet);
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < states.size(); i++)
+        {
+            bool found = false;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(states[i], sets[j]) != nullptr)
+                    found = true;
+            }
+            if (!found)
+            {
+                vector<state*> newSet;
+                newSet.push_back(states[i]);
+                sets.push_back(newSet);
+            }
+        }
+
+        // DEBUG: Print sets
+        /* for (int i = 0; i < sets.size(); i++)
+        {
+            cout << "{";
+            for (int j = 0; j < sets[i].size(); j++)
+                {
+                    cout << sets[i][j]->data;
+                    if (j != sets[i].size() - 1)
+                        cout << ",";
+                }
+            cout << "}, ";
+        }
+        cout << endl; */
+
+        self* reduced_automata = new self();
+        reduced_automata->numberOfStates = sets.size();
+        
+        // Añadiendo estados
+        for (int i = 0; i < sets.size(); i++)
+        {
+            state* newState = new state();
+            string newData = "";
+
+            for (int j = 0; j < sets[i].size(); j++)
+            {
+                newData += sets[i][j]->data;
+                if (j != sets[i].size() - 1)
+                    newData += ",";
+            }
+
+            newState->data = "[" + newData + "]";
+            reduced_automata->states.push_back(newState);
+        }
+
+        // Añadiendo transiciones
+        for (int i = 0; i < sets.size(); i++)
+        {
+            state* &stateA = sets[i][0];
+            state* &stateB_0 = stateA->transitions[0]->stateEnd;
+
+            int stateB_0_Index = -1;
+
+            bool found = false;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(stateB_0, sets[j]) != nullptr)
+                {
+                    found = true;
+                    stateB_0_Index = j;
+                }
+            }
+
+            state* &stateB_1 = stateA->transitions[1]->stateEnd;
+
+            int stateB_1_Index = -1;
+
+            found = false;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(stateB_1, sets[j]) != nullptr)
+                {
+                    found = true;
+                    stateB_1_Index = j;
+                }
+            }
+
+            reduced_automata->states[i]->addTransition("0", reduced_automata->states[i], reduced_automata->states[stateB_0_Index]);
+            reduced_automata->states[i]->addTransition("1", reduced_automata->states[i], reduced_automata->states[stateB_1_Index]);
+        }
+
+        
+
+        // DEBUG: Transiciones del nuevo automata
+        /* for (int i = 0; i < reduced_automata->states.size(); i++)
+        {
+            cout << reduced_automata->states[i]->data << " | ";
+            for (int j = 0; j < reduced_automata->states[i]->transitions.size(); j++)
+            {
+                cout << reduced_automata->states[i]->transitions[j]->stateEnd->data << " ";
+            }
+            cout << endl;
+        }
+        cout << endl; */
+
+        // Añadiendo estado inicial
+        bool found = false;
+        int indexOfInitState = -1;
+        for (int i = 0; i < sets.size() && !found; i++)
+        {
+            if (findState(initState, sets[i]))
+            {
+                found = true;
+                indexOfInitState = i;
+            }
+        }
+
+        reduced_automata->initState = reduced_automata->states[indexOfInitState];
+
+        // Añadiendo estados finales
+        for (int i = 0; i < finalStates.size(); i++)
+        {
+            bool found = false;
+            int indexOfFinalState = -1;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(finalStates[i], sets[j]))
+                {
+                    found = true;
+                    indexOfFinalState = j;
+                }
+            }
+
+            state* &newFinalState = reduced_automata->states[indexOfFinalState];
+
+            if(findState(newFinalState, reduced_automata->finalStates) == nullptr)
+                reduced_automata->finalStates.push_back(newFinalState);
+        }
+
+        reduced_automata->numberOfFinalStates = reduced_automata->finalStates.size();
+        reduced_automata->print();
     }
 
     void print()
