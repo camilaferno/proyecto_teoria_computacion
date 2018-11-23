@@ -697,9 +697,12 @@ struct Automata
         return nullptr;
     }
 
-    void equivalence_improved()
+    vector<vector<bool>> equivalence_improved()
     {
-        vector<vector<bool>> distinctMatrix(numberOfStates, vector<bool>(numberOfStates, 1));
+        bool dist = 0;
+        bool no_dist = 1;
+
+        vector<vector<bool>> distinctMatrix(numberOfStates, vector<bool>(numberOfStates, no_dist));
         vector<PairOfStates*> pairs;
         queue<PairOfStates*> pairQueue;
         map<state*, int> stateLocation;
@@ -742,17 +745,17 @@ struct Automata
             cout << endl;
         } */
 
-        // Inicializa con 1 los pares (p,q) donde p es estado final y q no
+        // Inicializa como distinguibles los pares (p,q) donde p es estado final y q no
         for(int i = 0; i < numberOfStates; i++)
         {
             if (findState(states[i], finalStates))
             {
                 for(int j = 0; j < numberOfStates; j++)
                 {
-                    if (states[j] != states[i] || findState(states[j], finalStates) == 0)
+                    if (states[j] != states[i] && findState(states[j], finalStates) == nullptr)
                     {
-                        distinctMatrix[i][j] = 0;
-                        distinctMatrix[j][i] = 0;
+                        distinctMatrix[i][j] = dist;
+                        distinctMatrix[j][i] = dist;
                         pairQueue.push(findPairOfStates(states[i], states[j], pairs)); 
                     }
                 }
@@ -776,7 +779,7 @@ struct Automata
             int pairFirstLocation = stateLocation[pair->first];
             int pairSecondLocation = stateLocation[pair->second];
 
-            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
+            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == dist)
             {
                 vector<PairOfStates*> &listOfDependencies = pair->dependencies;
                 for (int j = 0; j < listOfDependencies.size(); j++)
@@ -785,9 +788,9 @@ struct Automata
                     int depFirstLocation = stateLocation[currentDependency->first];
                     int depSecondLocation = stateLocation[currentDependency->second];
 
-                    if (distinctMatrix[depFirstLocation][depSecondLocation] == 1 && depFirstLocation != depSecondLocation)
+                    if (distinctMatrix[depFirstLocation][depSecondLocation] != dist && depFirstLocation != depSecondLocation)
                     {
-                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = 0;
+                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = dist;
                         pairQueue.push(currentDependency);
                     }
                 }
@@ -796,7 +799,7 @@ struct Automata
         }
 
         // DEBUG: Impresión en pirámide
-        /* for(int i = 0; i < numberOfStates; i++)
+        for(int i = 0; i < numberOfStates; i++)
         {
             if (i != 0)
             {
@@ -812,10 +815,10 @@ struct Automata
         cout << "  ";
         for(int i = 0; i < numberOfStates - 1; i++)
             cout << states[i]->data << " ";
-        cout << endl; */
+        cout << endl;
 
         // Impresión normal
-        for(int i = 0; i < numberOfStates; i++)
+        /* for(int i = 0; i < numberOfStates; i++)
         {
             cout << states[i]->data << " ";
             for(int j = 0; j < numberOfStates; j++)
@@ -828,9 +831,15 @@ struct Automata
         cout << "  ";
         for(int i = 0; i < numberOfStates; i++)
             cout << states[i]->data << " ";
-        cout << endl;
+        cout << endl; */
+
+        return distinctMatrix;
     }
 
+    void moore()
+    {
+        vector<vector<bool>> distinctMatrix = equivalence_improved();
+    }
 
     void print()
     {

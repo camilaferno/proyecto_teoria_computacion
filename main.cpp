@@ -7,7 +7,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
 	// automata* A = new automata("graph_construct.txt");
 	// automata* B = new automata("graph_construct4.txt");
-	automata* C = new automata("ejemplo_4_19.txt");
+	automata* C = new automata("ex3.txt");
 
   // A->print();
 	// cout << endl;
