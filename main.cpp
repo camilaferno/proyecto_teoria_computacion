@@ -31,14 +31,14 @@ int main(int argc, char *argv[]) {
 	//
 	C->print();
 	cout << endl;
-	//C->Brzozowski();
-	C->getTranspose();
-	cout << endl;
-	C->Equivalencia();
-	cout << endl;
-	C->equivalence_improved();
-	cout << endl;
-	cout << endl;
+	C->Brzozowski();
+	//C->getTranspose();
+	// cout << endl;
+	// C->Equivalencia();
+	// cout << endl;
+	// C->equivalence_improved();
+	// cout << endl;
+	// cout << endl;
 
 	return 0;
 }

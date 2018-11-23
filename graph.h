@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <limits.h>
 #include <set>
 #include <queue>
@@ -39,7 +40,7 @@ struct Automata
     int numberOfStates, numberOfFinalStates;
     state* initState;
     StateSeq states, initStates, finalStates;
-    map<string, string> renamedTo;
+    map<string, int> renamedTo;
 
     StateIte si;
     TransitionIte ti;
@@ -88,7 +89,7 @@ struct Automata
             }
 
             string line;
-            
+
             while (getline(automataFile, line))
             {
                 vector<string> vectorLine = split(line + " ", " ");
@@ -185,6 +186,18 @@ struct Automata
         else return (*si);
     }
 
+    state* findInitState(S data)
+    {
+      for (si = initStates.begin(); si != initStates.end(); ++si)
+          if((*si)->data == data) return (*si);
+    }
+
+    state* findFinalState(S data)
+    {
+      for (si = finalStates.begin(); si != finalStates.end(); ++si)
+          if((*si)->data == data) return (*si);
+    }
+
     Automata* getTranspose()
     {
         Automata* transpose = new Automata();
@@ -210,13 +223,13 @@ struct Automata
 
         for(auto it = finalStates.begin(); it != finalStates.end(); ++it)
             transpose->initStates.push_back(transpose->findState((*it)->data));
-        
+
         transpose->numberOfFinalStates = finalStates.size();
         transpose->initState = finalStates.front();
 
-        /* cout << "Transpuesto: " << endl;
+        cout << "Transpuesto: " << endl;
         transpose->printNFA();
-        cout << endl; */
+        cout << endl;
         return transpose;
     }
 
@@ -284,7 +297,7 @@ struct Automata
                             matrix[i][j] = 0;
                             change = 1;
                         }
-                        else 
+                        else
                         {
                             for (in = 0; in < numberOfStates; in++)
                             {
@@ -330,15 +343,14 @@ struct Automata
         queue<S> myqueue;
         set<S> AddedToQueue;
 
-        string newNode1 = "?";
-        string newNode2 = "?";
+        string newNode1 = "-";
+        string newNode2 = "-";
 
         //Agregar stados inciales
         for(auto it = initStates.begin(); it != initStates.end(); ++it)
         {
             convertedToDFA->addState((*it)->data);
             convertedToDFA->initStates.push_back(convertedToDFA->findState((*it)->data));
-            convertedToDFA->numberOfStates += 1;
         }
 
         for(auto it = states.begin(); it != states.end(); it++)
@@ -351,19 +363,27 @@ struct Automata
                 for(ti = (*it)->transitions.begin(); ti != (*it)->transitions.end(); ti++)
                 {
                     if((*ti)->transitionChar == "0")
-                        newNode1 += (*ti)->stateEnd->data;
+                        newNode1 += ',' + (*ti)->stateEnd->data;
+
 
                     else if((*ti)->transitionChar == "1")
-                        newNode2 += (*ti)->stateEnd->data;
+                        newNode2 += ',' + (*ti)->stateEnd->data;
                 }
 
-                // Borra "?"
-                if(newNode2.find("?") != string::npos && newNode2.size()>1)
-                    newNode2.erase(remove(newNode2.begin(), newNode2.end(), '?'), newNode2.end());
+                cout << "NewNode1: " << newNode1 << " newNode2: " << newNode2 << " ";
 
-                if(newNode1.find("?") != string::npos && newNode1.size()>1)
-                    newNode1.erase(remove(newNode1.begin(), newNode1.end(), '?'), newNode1.end());
-
+                // Borra "-"
+                if(newNode2.find("-") != string::npos && newNode2.size()>1)
+                {
+                  newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
+                  newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
+                }
+                if(newNode1.find("-") != string::npos && newNode1.size()>1)
+                {
+                  newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
+                  newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
+                }
+                cout << "NewNode1bor: " << newNode1 << " newNode2bor: " << newNode2 << " ";
                 sort(newNode1.begin(), newNode1.end());
                 sort(newNode2.begin(), newNode2.end());
 
@@ -436,8 +456,8 @@ struct Automata
                     myqueue.push(newNode2);
                     AddedToQueue.insert(newNode2);
                 }
-                newNode1 = "?";
-                newNode2 = "?";
+                newNode1 = "-";
+                newNode2 = "-";
             }
         }
 
@@ -445,14 +465,15 @@ struct Automata
         newNode1.clear();
         newNode2.clear();
 
+        /*
         while (!myqueue.empty())
         {
-            newNode1 = "?";
-            newNode2 = "?";
+            newNode1 = "-";
+            newNode2 = "-";
 
-            if (myqueue.front() == "?" && !myqueue.empty())
+            if (myqueue.front() == "-" && !myqueue.empty())
             {
-                state* vacio = convertedToDFA->findState("?");
+                state* vacio = convertedToDFA->findState("-");
                 vacio->addTransition("0", vacio, vacio);
                 vacio->addTransition("1", vacio, vacio);
                 myqueue.pop();
@@ -469,13 +490,13 @@ struct Automata
 
                 if
                 (
-                    ((*it)->data == myqueue.front() && !myqueue.empty()) 
-                    || 
+                    ((*it)->data == myqueue.front() && !myqueue.empty())
+                    ||
                     (current.find(firstState) != string::npos && !myqueue.empty())
                 )
                 {
                     // Si se necesita union
-                    if(current.size() > 1)
+                    if(current.size() > 1) //Aca ta el error
                         unionOfStates(newNode1, newNode2, current);
                     else
                     {
@@ -489,12 +510,17 @@ struct Automata
                         }
                     }
 
-                    if(newNode2.find("?") != string::npos && newNode2.size() > 1)
-                        newNode2.erase(remove(newNode2.begin(), newNode2.end(), '?'), newNode2.end());
-                    
-                    if(newNode1.find("?") != string::npos && newNode1.size()>1)
-                        newNode1.erase(remove(newNode1.begin(), newNode1.end(), '?'), newNode1.end());
-                    
+                    if(newNode2.find("-") != string::npos && newNode2.size() > 1)
+                    {
+                      newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
+                      newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
+                    }
+
+                    if(newNode1.find("-") != string::npos && newNode1.size()>1)
+                    {
+                      newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
+                      newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
+                    }
 
                     sort(newNode1.begin(), newNode1.end());
                     sort(newNode2.begin(), newNode2.end());
@@ -550,7 +576,7 @@ struct Automata
                             convertedToDFA->numberOfStates += 1;
                             convertedToDFA->addState(newNode2);
                         }
-                        
+
                         myqueue.push(newNode2);
                     }
 
@@ -562,8 +588,8 @@ struct Automata
                                                                                 convertedToDFA->findState(myqueue.front()),
                                                                                 convertedToDFA->findState(newNode2));
 
-                    newNode1 = "?";
-                    newNode2 = "?";
+                    newNode1 = "-";
+                    newNode2 = "-";
                     myqueue.pop();
                 }
 
@@ -575,77 +601,64 @@ struct Automata
             std::cout << renamedTo.begin()->first << " => " << renamedTo.begin()->second << '\n';
             renamedTo.erase(renamedTo.begin());
         }
+        */
         cout << "NFA to DFA: " << endl;
         convertedToDFA->printNFA();
-        cout << endl; */
+        cout << endl;
         return convertedToDFA;
     }
 
     void renombramiento(Automata* &rename)
     {
-        string tmp = "0";
-        int count = 0;
-
-        for(si = rename->states.begin(); si != rename->states.end(); ++si)
-        {
-            if(((*si)->data).size() == 1)
-            {
-                if(tmp < (*si)->data)
-                    tmp = (*si)->data;
-            }
-        }
-
-        string nextLetter(1, static_cast<char>(tmp[0] + 1));
+        int count=0;
 
         for(auto it = rename->states.begin(); it != rename->states.end(); ++it)
         {
-            if (((*it)->data).size() > 1)
-            {
-                if (count == 0)
-                {
-                    rename->renamedTo.insert({(*it)->data, nextLetter});
-
-                    if(isInitState((*it)->data))
-                        (*it)->data = nextLetter;
-                        
-                    if(isFinalState((*it)->data))
-                        (*it)->data = nextLetter;
-
-                    (*it)->data = nextLetter;
-                    count = 1;
-                }
-                else if (count > 0)
-                {
-                    string nextnextLetter(1, static_cast<char>(nextLetter[0] + count));
-                    rename->renamedTo.insert({(*it)->data, nextnextLetter});
-
-                    if(isInitState((*it)->data))
-                        (*it)->data = nextLetter;
-
-                    if(isFinalState((*it)->data))
-                        (*it)->data = nextLetter;
-
-                    (*it)->data = nextnextLetter;
-                    count += 1;
-                }
-            }
-            else if (((*it)->data) == "?")
-                (*it)->data = "N";  
+          renamedTo.insert(pair<string, int>((*it)->data, count));
+          count +=1;
         }
+
+        for (std::map<string,int>::iterator ti=renamedTo.begin(); ti!=renamedTo.end(); ++ti)
+        std::cout << ti->first << " => " << ti->second << '\n';
+        cout << endl;
+
+        ostringstream int_to_string;
+
+        for(auto it = rename->states.begin(); it != rename->states.end(); ++it)
+        {
+          ostringstream int_to_string;
+          int_to_string << renamedTo.find((*it)->data)->second;
+          (*it)->data = int_to_string.str();
+
+          if(isInitState((*it)->data))
+          {
+            findInitState((*it)->data)->data = int_to_string.str();
+          }
+
+          if(isFinalState((*it)->data))
+          {
+            findFinalState((*it)->data)->data = int_to_string.str();
+          }
+
+        }
+        cout << endl;
+
     }
 
     Automata* Brzozowski()
     {
         Automata* brzozowski = new Automata();
         Automata* renamed = new Automata;
+        Automata* lastRenamed = new Automata;
 
-        renamed = (getTranspose()->NFAtoDFA())->getTranspose();
+        renamed=(getTranspose()->NFAtoDFA());
         renombramiento(renamed);
-        /* cout << endl;
-        cout << "Renamed: " << endl; */
+        cout << "Renamed NFAtoDFA" << endl;
         renamed->printNFA();
-        // cout << endl;
-        brzozowski = renamed->NFAtoDFA();
+        /*
+        lastRenamed =renamed->getTranspose();
+        brzozowski= lastRenamed->NFAtoDFA();
+        */
 
         return brzozowski;
     }
