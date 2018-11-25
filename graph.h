@@ -475,7 +475,7 @@ struct Automata
                 isSalida1 = true;
                 break;
               }
-            }
+          }
 
             if(!isSalida1)
             {
