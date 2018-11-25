@@ -198,6 +198,27 @@ struct Automata
           if((*si)->data == data) return (*si);
     }
 
+    void sort_string(string &newNode)
+    {
+        vector<int> myvector;
+        string tmp;
+        stringstream stream(newNode);
+        while(getline(stream, tmp, ','))
+        {
+            myvector.push_back(stoi(tmp));
+        }
+
+        sort(myvector.begin(), myvector.end());
+
+        newNode.clear();
+        newNode = to_string(*myvector.begin());
+
+        for (std::vector<int>::iterator it=myvector.begin()+1; it!=myvector.end(); ++it)
+        {
+            newNode += ',' + to_string(*it);
+        }
+    }
+
     Automata* getTranspose()
     {
         Automata* transpose = new Automata();
@@ -235,20 +256,26 @@ struct Automata
 
     void unionOfStates(string &newNode1, string &newNode2, string current)
     {
-        for(int i = 0; i < current.size(); i++)
+        vector<string> states_in_current;
+        string tmp;
+        stringstream stream(current);
+        while(getline(stream, tmp, ','))
         {
-            string character = current.substr(i, 1);
+            states_in_current.push_back(tmp);
+        }
 
+        for(auto currentit = states_in_current.begin(); currentit != states_in_current.end(); ++currentit)
+        {
             for(auto stateit = states.begin(); stateit != states.end(); ++stateit)
             {
-                if(character == (*stateit)->data)
+                if(*currentit == (*stateit)->data)
                 {
                     for(ti = (*stateit)->transitions.begin(); ti != (*stateit)->transitions.end(); ti++)
                     {
                         if((*ti)->transitionChar == "0")
-                            newNode1 += (*ti)->stateEnd->data;
+                            newNode1 += ',' + (*ti)->stateEnd->data;
                         if((*ti)->transitionChar == "1")
-                            newNode2 += (*ti)->stateEnd->data;
+                            newNode2 += ',' + (*ti)->stateEnd->data;
                     }
                 }
             }
@@ -375,33 +402,41 @@ struct Automata
                 // Borra "-"
                 if(newNode2.find("-") != string::npos && newNode2.size()>1)
                 {
-                  newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
-                  newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
+                    newNode2.erase(0,2);
                 }
                 if(newNode1.find("-") != string::npos && newNode1.size()>1)
                 {
-                  newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
-                  newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
+                    newNode1.erase(0,2);
                 }
                 cout << "NewNode1bor: " << newNode1 << " newNode2bor: " << newNode2 << " ";
-                sort(newNode1.begin(), newNode1.end());
-                sort(newNode2.begin(), newNode2.end());
+
+                if(newNode1 != "-")
+                {
+                    sort_string(newNode1);
+                }
+                if(newNode2 != "-")
+                {
+                    sort_string(newNode2);
+                }
 
                 if(!convertedToDFA->isState(newNode1))
                 {
                     bool isSalida1 = false;
-                    for(auto& salida: finalStates)
+
+                    // Si dentro de newNode1 hay un elemento de salida
+                    string tmpNewNode1;
+                    stringstream stream(newNode1);
+                    while(getline(stream, tmpNewNode1, ','))
                     {
-                        // Si dentro de newNode1 hay un elemento de salida
-                        if(newNode1.find((salida)->data) != string::npos)
-                        {
-                            convertedToDFA->addState(newNode1);
-                            convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode1));
-                            convertedToDFA->numberOfFinalStates += 1;
-                            convertedToDFA->numberOfStates += 1;
-                            isSalida1=true;
-                            break;
-                        }
+                      if(isFinalState(tmpNewNode1))
+                      {
+                        convertedToDFA->addState(newNode1);
+                        convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode1));
+                        convertedToDFA->numberOfFinalStates += 1;
+                        convertedToDFA->numberOfStates += 1;
+                        isSalida1 = true;
+                        break;
+                      }
                     }
 
                     if(!isSalida1)
@@ -414,19 +449,23 @@ struct Automata
                 if(!convertedToDFA->isState(newNode2))
                 {
                     bool isSalida2 = false;
-                    for(auto& salida: finalStates)
+
+                    // Si dentro de newNode2 hay un elemento de salida
+                    string tmpNewNode2;
+                    stringstream stream(newNode2);
+                    while(getline(stream, tmpNewNode2, ','))
                     {
-                        // Si dentro de newNode1 hay un elemento de salida
-                        if(newNode2.find((salida)->data) != string::npos)
-                        {
-                            convertedToDFA->addState(newNode2);
-                            convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
-                            convertedToDFA->numberOfFinalStates += 1;
-                            convertedToDFA->numberOfStates += 1;
-                            isSalida2 = true;
-                            break;
-                        }
+                      if(isFinalState(tmpNewNode2))
+                      {
+                        convertedToDFA->addState(newNode2);
+                        convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
+                        convertedToDFA->numberOfFinalStates += 1;
+                        convertedToDFA->numberOfStates += 1;
+                        isSalida2 = true;
+                        break;
+                      }
                     }
+
                     if(!isSalida2)
                     {
                         convertedToDFA->numberOfStates += 1;
@@ -465,7 +504,6 @@ struct Automata
         newNode1.clear();
         newNode2.clear();
 
-        /*
         while (!myqueue.empty())
         {
             newNode1 = "-";
@@ -496,74 +534,53 @@ struct Automata
                 )
                 {
                     // Si se necesita union
-                    if(current.size() > 1) //Aca ta el error
+                    if(current.find(",") !=  string::npos) //Aca ta el error
                         unionOfStates(newNode1, newNode2, current);
                     else
                     {
                         for(ti = (*it)->transitions.begin(); ti != (*it)->transitions.end(); ti++)
                         {
                             if((*ti)->transitionChar == "0")
-                                newNode1 += (*ti)->stateEnd->data;
+                                newNode1 += ',' + (*ti)->stateEnd->data;
 
                             if((*ti)->transitionChar == "1")
-                                newNode2 += (*ti)->stateEnd->data;
+                                newNode2 += ',' + (*ti)->stateEnd->data;
                         }
                     }
 
-                    if(newNode2.find("-") != string::npos && newNode2.size() > 1)
+                    if(newNode2.find("-") != string::npos && newNode2.size()>1)
                     {
-                      newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
-                      newNode2.erase(remove(newNode2.begin(), newNode2.end(), '-'), newNode2.end());
+                      newNode2.erase(0,2); //there where 2 identical erase here idk why
                     }
-
                     if(newNode1.find("-") != string::npos && newNode1.size()>1)
                     {
-                      newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
-                      newNode1.erase(remove(newNode1.begin(), newNode1.end(), '-'), newNode1.end());
+                      newNode1.erase(0,2);
                     }
 
-                    sort(newNode1.begin(), newNode1.end());
-                    sort(newNode2.begin(), newNode2.end());
+                    if(newNode1 != "-")
+                    {
+                        sort_string(newNode1);
+                    }
+                    if(newNode2 != "-")
+                    {
+                        sort_string(newNode2);
+                    }
 
                     // cout << "Current: " << current << " NewNode1: " << newNode1 << " NewNode2: " << newNode2 << endl;
 
-                    // If newNode1 is not in the nodes vector
                     if(!convertedToDFA->isState(newNode1))
                     {
                         bool isSalida1 = false;
 
-                        for (auto& salida: finalStates)
+                        // Si dentro de newNode1 hay un elemento de salida
+                        string tmpNewNode1;
+                        stringstream stream(newNode1);
+                        while(getline(stream, tmpNewNode1, ','))
                         {
-                            //Si dentro de newNode1 hay un elemento de salida
-                            if (newNode1.find((salida)->data) != string::npos)
+                            if(isFinalState(tmpNewNode1))
                             {
                                 convertedToDFA->addState(newNode1);
                                 convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode1));
-                                convertedToDFA->numberOfFinalStates += 1;
-                                convertedToDFA->numberOfStates += 1;
-                                isSalida1 = true;
-                                break;
-                            }
-                        }
-                        if (!isSalida1)
-                        {
-                            convertedToDFA->numberOfStates += 1;
-                            convertedToDFA->addState(newNode1);
-                        }
-                        myqueue.push(newNode1);
-                    }
-
-                    // If newNode2 is not in the nodes vector
-                    if(!convertedToDFA->isState(newNode2))
-                    {
-                        bool isSalida1 = false;
-                        for(auto& salida: finalStates)
-                        {
-                            // Si dentro de newNode1 hay un elemento de salida
-                            if(newNode2.find((salida)->data) != string::npos)
-                            {
-                                convertedToDFA->addState(newNode2);
-                                convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
                                 convertedToDFA->numberOfFinalStates += 1;
                                 convertedToDFA->numberOfStates += 1;
                                 isSalida1 = true;
@@ -574,9 +591,36 @@ struct Automata
                         if(!isSalida1)
                         {
                             convertedToDFA->numberOfStates += 1;
+                            convertedToDFA->addState(newNode1);
+                        }
+                        myqueue.push(newNode1);
+                    }
+
+                    if(!convertedToDFA->isState(newNode2))
+                    {
+                        bool isSalida2 = false;
+
+                        // Si dentro de newNode2 hay un elemento de salida
+                        string tmpNewNode2;
+                        stringstream stream(newNode2);
+                        while(getline(stream, tmpNewNode2, ','))
+                        {
+                          if(isFinalState(tmpNewNode2))
+                          {
                             convertedToDFA->addState(newNode2);
+                            convertedToDFA->finalStates.push_back(convertedToDFA->findState(newNode2));
+                            convertedToDFA->numberOfFinalStates += 1;
+                            convertedToDFA->numberOfStates += 1;
+                            isSalida2 = true;
+                            break;
+                          }
                         }
 
+                        if(!isSalida2)
+                        {
+                            convertedToDFA->numberOfStates += 1;
+                            convertedToDFA->addState(newNode2);
+                        }
                         myqueue.push(newNode2);
                     }
 
@@ -655,10 +699,10 @@ struct Automata
         renombramiento(renamed);
         cout << "Renamed NFAtoDFA" << endl;
         renamed->printNFA();
-        /*
+
         lastRenamed =renamed->getTranspose();
         brzozowski= lastRenamed->NFAtoDFA();
-        */
+
 
         return brzozowski;
     }
