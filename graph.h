@@ -124,7 +124,14 @@ struct Automata
     {
         bool operator()(const state* a, const state* b)
         {
-            return (a->data < b ->data);
+            try
+            {
+                return (stoi(a->data) < stoi(b->data));
+            }
+            catch(exception& e)
+            {
+                return (a->data < b->data);
+            }
         }
     };
 
@@ -697,7 +704,7 @@ struct Automata
         return nullptr;
     }
 
-    vector<vector<bool>> equivalence_improved()
+    vector<vector<bool>>    _improved()
     {
         const bool dist = 0;
         const bool no_dist = 1;
@@ -836,7 +843,7 @@ struct Automata
         return distinctMatrix;
     }
 
-    void moore()
+    self* moore()
     {
         vector<vector<bool>> distinctMatrix = equivalence_improved();
         const bool dist = 0;
@@ -1021,7 +1028,9 @@ struct Automata
         }
 
         reduced_automata->numberOfFinalStates = reduced_automata->finalStates.size();
-        reduced_automata->print();
+        
+
+        return reduced_automata;
     }
 
     void print()
