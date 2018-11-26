@@ -5,7 +5,8 @@ import sys
 r = random.SystemRandom()
 
 def generator():
-    n = r.choice(list(range(4, 100)))
+    #n = r.choice(list(range(4, 100)))
+    n = 5
     n_final_states = r.choice(list(range(1, int(n/5+1))))
 
     states = list(range(0, n))
@@ -13,7 +14,7 @@ def generator():
     init_state = r.choice(states)
     final_states = r.sample(states, n_final_states)
 
-    filename = "generated/aut_" + str(i+1)
+    filename = "generated/aut_" + str(i+1) + ".txt"
     file = open(filename, "w+")
     line = str(n) + " " + str(init_state) + " " + str(n_final_states) + " "
     for fs in final_states:
