@@ -704,7 +704,7 @@ struct Automata
         return nullptr;
     }
 
-    vector<vector<bool>>    _improved()
+    vector<vector<bool>> equivalence_improved()
     {
         const bool dist = 0;
         const bool no_dist = 1;
@@ -741,17 +741,6 @@ struct Automata
             transitionPair1->dependencies.push_back(pair);
         }
 
-        // DEBUG: Print pairs and its dependencies
-        /* for (int i = 0; i < pairs.size(); i++)
-        {
-            cout << pairs[i]->data << " | ";
-            for (int j = 0; j < pairs[i]->dependencies.size(); j++)
-            {
-                cout << pairs[i]->dependencies[j]->data << " ";
-            }
-            cout << endl;
-        } */
-
         // Inicializa como distinguibles los pares (p,q) donde p es estado final y q no
         for(int i = 0; i < numberOfStates; i++)
         {
@@ -768,16 +757,6 @@ struct Automata
                 }
             }
         }
-
-        // DEBUG: Queue check
-        /* cout << "Queue so far: " << endl;
-        queue<PairOfStates*> testQ = pairQueue;
-        while (!testQ.empty())
-        {
-            cout << (testQ.front())->data << " ";
-            testQ.pop();
-        }
-        cout << endl; */
 
         while (!pairQueue.empty())
         {
@@ -802,43 +781,8 @@ struct Automata
                     }
                 }
             }
-            if (!pairQueue.empty()) pairQueue.pop();
+            pairQueue.pop();
         }
-
-        // DEBUG: Impresión en pirámide
-        for(int i = 0; i < numberOfStates; i++)
-        {
-            if (i != 0)
-            {
-                cout << states[i]->data << " ";
-                for(int j = 0; j <= i - 1; j++)
-                {
-                    cout << distinctMatrix[i][j] << " ";
-                }
-                cout << endl;
-            }
-        }
-
-        cout << "  ";
-        for(int i = 0; i < numberOfStates - 1; i++)
-            cout << states[i]->data << " ";
-        cout << endl;
-
-        // Impresión normal
-        /* for(int i = 0; i < numberOfStates; i++)
-        {
-            cout << states[i]->data << " ";
-            for(int j = 0; j < numberOfStates; j++)
-            {
-                cout << distinctMatrix[i][j] << " ";
-            }
-            cout << endl;
-        }
-
-        cout << "  ";
-        for(int i = 0; i < numberOfStates; i++)
-            cout << states[i]->data << " ";
-        cout << endl; */
 
         return distinctMatrix;
     }
