@@ -1,0 +1,19 @@
+9 A 3 C F I
+A 0 B
+A 1 E
+B 0 C
+B 1 F
+C 0 D
+C 1 H
+D 0 E
+D 1 H
+E 0 F
+E 1 I
+F 0 G
+F 1 B
+G 0 H
+G 1 B
+H 0 I
+H 1 C
+I 0 A
+I 1 E

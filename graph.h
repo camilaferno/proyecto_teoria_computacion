@@ -324,7 +324,8 @@ struct Automata
         cout << endl;
     };
     
-        void Hopcroft(){
+    void Hopcroft()
+    {
         set<set<state*>> P, W;
         set<state*> F (finalStates.begin(),finalStates.end()), noF (states.begin(),states.end());
         for (si = finalStates.begin(); si != finalStates.end(); ++si)
@@ -344,7 +345,7 @@ struct Automata
                 for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
                     set<state*> Y = *it, intersect, minus;
                     set_intersection(X.begin(),X.end(),Y.begin(),Y.end(),inserter(intersect,intersect.begin()));
-                    set_difference(Y.begin(),Y.end(),X.begin(),X.end(),inserter(minus,minus.begin));
+                    set_difference(Y.begin(),Y.end(),X.begin(),X.end(),inserter(minus,minus.begin()));
                     if (!intersect.empty() && !minus.empty()){
                         P.erase(Y);
                         P.insert(intersect);
@@ -365,21 +366,47 @@ struct Automata
         //OUTPUT
 
         set<set<state*>> newF, newq0;
-        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end();){
+            bool go = true;
             if ((*it).count(initState) != 0) {
                 typename set<set<state*>>::iterator tmp = it;
-                --it;
+                if (F.count(*((*it).begin())) != 0) {
+                    typename set<set<state*>>::iterator tmp = it;
+                    newF.insert(*tmp);
+                }
+                ++it;
                 P.erase(*tmp);
                 newq0.insert(*tmp);
+                go = false;
             }
-            if (F.count(*((*it).begin())) != 0) {
+            else if (F.count(*((*it).begin())) != 0) {
                 typename set<set<state*>>::iterator tmp = it;
-                --it;
+                ++it;
                 P.erase(*tmp);
                 newF.insert(*tmp);
+                go = false;
             }
+
+            if (go)
+                ++it;
         }
-        cout << P.size() << " ";
+
+        /* for (typename set<set<state*>>::iterator it = P.begin(); it != P.end();){
+            bool go = true;
+            
+            if (F.count(*((*it).begin())) != 0) {
+                typename set<set<state*>>::iterator tmp = it;
+                //--it;
+                ++it;
+                P.erase(*tmp);
+                newF.insert(*tmp);
+                go = false;
+            }
+            if (go)
+                ++it;
+        } */
+        
+        cout << P.size() + newq0.size() + newF.size() << " ";
         for (typename set<state*>::iterator it = (*(newq0.begin())).begin(); it != (*(newq0.begin())).end(); ++it)
             cout << (*it)->data;
         cout << " " << newF.size();
@@ -389,25 +416,29 @@ struct Automata
                 cout << (*it2)->data;
         }
         cout << endl;
-        for (typename set<set<state*>>::iterator it = newq0.begin(); it != newq0.end(); ++it){
+        /* for (typename set<set<state*>>::iterator it = newq0.begin(); it != newq0.end(); ++it){
+            //cout << "X" << endl;
             for (int d = 0; d < 2; d++){
                 for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
-                    cout << (*it2)->data;
-                cout << " " << d << " " << (*((*it).begin()))->transitions[0]->stateEnd->data << endl;
+                    cout << "w" << endl;
+                    //cout <<(*it2)->data;
+
+                //cout << " " << d << " " << (*((*it).begin()))->transitions[d]->stateEnd->data << endl;
+                cout << " " << d << " " << (*((*it).begin())) << endl;
             }
-        }
+        } */
         for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
             for (int d = 0; d < 2; d++){
                 for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
                     cout << (*it2)->data;
-                cout << " " << d << " " << (*((*it).begin()))->transitions[0]->stateEnd->data << endl;
+                cout << " " << d << " " << (*((*it).begin()))->transitions[d]->stateEnd->data << endl;
             }
         }
         for (typename set<set<state*>>::iterator it = newF.begin(); it != newF.end(); ++it){
             for (int d = 0; d < 2; d++){
                 for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
                     cout << (*it2)->data;
-                cout << " " << d << " " << (*((*it).begin()))->transitions[0]->stateEnd->data << endl;
+                cout << " " << d << " " << (*((*it).begin()))->transitions[d]->stateEnd->data << endl;
             }
         }
 

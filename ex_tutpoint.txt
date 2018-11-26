@@ -1,0 +1,13 @@
+6 a 3 c d e
+a 0 b
+a 1 d
+b 0 a
+b 1 c
+c 0 e
+c 1 f
+d 0 e
+d 1 f
+e 0 e
+e 1 f
+f 0 f
+f 1 f
