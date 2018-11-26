@@ -323,6 +323,95 @@ struct Automata
             cout << states[i]->data << " ";
         cout << endl;
     };
+    
+        void Hopcroft(){
+        set<set<state*>> P, W;
+        set<state*> F (finalStates.begin(),finalStates.end()), noF (states.begin(),states.end());
+        for (si = finalStates.begin(); si != finalStates.end(); ++si)
+            noF.erase(*si);
+        P.insert(F);
+        P.insert(noF);
+        W.insert(F);
+        while (!W.empty()){
+            set<state*> A (*(W.begin()));
+            W.erase(A);                     //choose and remove a set A from W
+            for (int L = 0; L < 2; L++){     //lenguaje es {0,1}
+                set<state*> X;
+                for (si = states.begin(); si != states.end(); ++si){
+                    if (A.count((*si)->transitions[L]->stateEnd)!=0)    //let X be the set of states for which a transition on c leads to a state in A
+                        X.insert(*si);
+                }
+                for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
+                    set<state*> Y = *it, intersect, minus;
+                    set_intersection(X.begin(),X.end(),Y.begin(),Y.end(),inserter(intersect,intersect.begin()));
+                    set_difference(Y.begin(),Y.end(),X.begin(),X.end(),inserter(minus,minus.begin));
+                    if (!intersect.empty() && !minus.empty()){
+                        P.erase(Y);
+                        P.insert(intersect);
+                        P.insert(minus);
+                        if (W.find(Y) != W.end()){
+                            W.erase(Y);
+                            W.insert(intersect);
+                            W.insert(minus);
+                        }
+                        else if (intersect.size() <= minus.size())
+                            W.insert(intersect);
+                        else
+                            W.insert(minus);
+                    }
+                }
+            }
+        }
+        //OUTPUT
+
+        set<set<state*>> newF, newq0;
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
+            if ((*it).count(initState) != 0) {
+                typename set<set<state*>>::iterator tmp = it;
+                --it;
+                P.erase(*tmp);
+                newq0.insert(*tmp);
+            }
+            if (F.count(*((*it).begin())) != 0) {
+                typename set<set<state*>>::iterator tmp = it;
+                --it;
+                P.erase(*tmp);
+                newF.insert(*tmp);
+            }
+        }
+        cout << P.size() << " ";
+        for (typename set<state*>::iterator it = (*(newq0.begin())).begin(); it != (*(newq0.begin())).end(); ++it)
+            cout << (*it)->data;
+        cout << " " << newF.size();
+        for (typename set<set<state*>>::iterator it = newF.begin(); it != newF.end(); ++it){
+            cout << " ";
+            for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
+                cout << (*it2)->data;
+        }
+        cout << endl;
+        for (typename set<set<state*>>::iterator it = newq0.begin(); it != newq0.end(); ++it){
+            for (int d = 0; d < 2; d++){
+                for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
+                    cout << (*it2)->data;
+                cout << " " << d << " " << (*((*it).begin()))->transitions[0]->stateEnd->data << endl;
+            }
+        }
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
+            for (int d = 0; d < 2; d++){
+                for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
+                    cout << (*it2)->data;
+                cout << " " << d << " " << (*((*it).begin()))->transitions[0]->stateEnd->data << endl;
+            }
+        }
+        for (typename set<set<state*>>::iterator it = newF.begin(); it != newF.end(); ++it){
+            for (int d = 0; d < 2; d++){
+                for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
+                    cout << (*it2)->data;
+                cout << " " << d << " " << (*((*it).begin()))->transitions[0]->stateEnd->data << endl;
+            }
+        }
+
+    };
 
     Automata* NFAtoDFA()
     {
