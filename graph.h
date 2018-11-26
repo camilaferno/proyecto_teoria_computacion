@@ -324,7 +324,7 @@ struct Automata
         cout << endl;
     };
     
-    void Hopcroft()
+    self* Hopcroft()
     {
         set<set<state*>> P, W;
         set<state*> F (finalStates.begin(),finalStates.end()), noF (states.begin(),states.end());
@@ -365,85 +365,107 @@ struct Automata
         }
         //OUTPUT
 
-        set<set<state*>> newF, newq0;
-        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end();){
-            bool go = true;
-            if ((*it).count(initState) != 0) {
-                typename set<set<state*>>::iterator tmp = it;
-                if (F.count(*((*it).begin())) != 0) {
-                    typename set<set<state*>>::iterator tmp = it;
-                    newF.insert(*tmp);
-                }
-                ++it;
-                P.erase(*tmp);
-                newq0.insert(*tmp);
-                go = false;
-            }
-            else if (F.count(*((*it).begin())) != 0) {
-                typename set<set<state*>>::iterator tmp = it;
-                ++it;
-                P.erase(*tmp);
-                newF.insert(*tmp);
-                go = false;
-            }
+        self* reduced_automata = new self();
+        reduced_automata->numberOfStates = P.size();
 
-            if (go)
-                ++it;
-        }
-
-        /* for (typename set<set<state*>>::iterator it = P.begin(); it != P.end();){
-            bool go = true;
-            
-            if (F.count(*((*it).begin())) != 0) {
-                typename set<set<state*>>::iterator tmp = it;
-                //--it;
-                ++it;
-                P.erase(*tmp);
-                newF.insert(*tmp);
-                go = false;
-            }
-            if (go)
-                ++it;
-        } */
-        
-        cout << P.size() + newq0.size() + newF.size() << " ";
-        for (typename set<state*>::iterator it = (*(newq0.begin())).begin(); it != (*(newq0.begin())).end(); ++it)
-            cout << (*it)->data;
-        cout << " " << newF.size();
-        for (typename set<set<state*>>::iterator it = newF.begin(); it != newF.end(); ++it){
-            cout << " ";
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it)
+        {
+            state* newState = new state();
+            string newData = "";
+            int i = 0;
             for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
-                cout << (*it2)->data;
-        }
-        cout << endl;
-        /* for (typename set<set<state*>>::iterator it = newq0.begin(); it != newq0.end(); ++it){
-            //cout << "X" << endl;
-            for (int d = 0; d < 2; d++){
-                for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
-                    cout << "w" << endl;
-                    //cout <<(*it2)->data;
+            {
+                newData += (*it2)->data;
+                if (i != (*it).size() - 1)
+                    newData += ",";
+                i++;
+            }
 
-                //cout << " " << d << " " << (*((*it).begin()))->transitions[d]->stateEnd->data << endl;
-                cout << " " << d << " " << (*((*it).begin())) << endl;
-            }
-        } */
-        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it){
-            for (int d = 0; d < 2; d++){
-                for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
-                    cout << (*it2)->data;
-                cout << " " << d << " " << (*((*it).begin()))->transitions[d]->stateEnd->data << endl;
-            }
+            newState->data = "[" + newData + "]";
+            reduced_automata->states.push_back(newState);
         }
-        for (typename set<set<state*>>::iterator it = newF.begin(); it != newF.end(); ++it){
-            for (int d = 0; d < 2; d++){
-                for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
-                    cout << (*it2)->data;
-                cout << " " << d << " " << (*((*it).begin()))->transitions[d]->stateEnd->data << endl;
+        int i = 0;
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end(); ++it)
+        {
+            state* stateA = *((*it).begin());
+            state* &stateB_0 = stateA->transitions[0]->stateEnd;
+
+            int stateB_0_Index = -1;
+
+            bool found = false;
+            int j = 0;
+            for (typename set<set<state*>>::iterator it2 = P.begin(); it2 != P.end() && !found; ++it2)
+            {
+                if ((*it2).find(stateB_0) != (*it2).end())
+                {
+                    found = true;
+                    stateB_0_Index = j;
+                }
+                j++;
             }
+
+            state* &stateB_1 = stateA->transitions[1]->stateEnd;
+
+            int stateB_1_Index = -1;
+
+            found = false;
+            j = 0;
+            for (typename set<set<state*>>::iterator it2 = P.begin(); it2 != P.end() && !found; ++it2)
+            {
+                if ((*it2).find(stateB_0) != (*it2).end())
+                {
+                    found = true;
+                    stateB_1_Index = j;
+                }
+                j++;
+            }
+
+            reduced_automata->states[i]->addTransition("0", reduced_automata->states[i], reduced_automata->states[stateB_0_Index]);
+            reduced_automata->states[i]->addTransition("1", reduced_automata->states[i], reduced_automata->states[stateB_1_Index]);
+            i++;
         }
 
+        bool found = false;
+        int indexOfInitState = -1;
+        i = 0;
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end() && !found; ++it)
+        {
+            if ((*it).find(initState) != (*it).end())
+            {
+                found = true;
+                indexOfInitState = i;
+            }
+            i++;
+        }
+
+        reduced_automata->initState = reduced_automata->states[indexOfInitState];
+
+        for (int i = 0; i < finalStates.size(); i++)
+        {
+            bool found = false;
+            int indexOfFinalState = -1, j = 0;
+            for (typename set<set<state*>>::iterator it = P.begin(); it != P.end() && !found; ++it)
+            {
+                if ((*it).find(finalStates[i]) != (*it).end())
+                {
+                    found = true;
+                    indexOfFinalState = j;
+                }
+                j++;
+            }
+
+            state* &newFinalState = reduced_automata->states[indexOfFinalState];
+
+            if(findState(newFinalState, reduced_automata->finalStates) == nullptr)
+                reduced_automata->finalStates.push_back(newFinalState);
+        }
+
+        reduced_automata->numberOfFinalStates = reduced_automata->finalStates.size();
+
+
+        return reduced_automata;
     };
-
+    
     Automata* NFAtoDFA()
     {
         Automata* convertedToDFA = new Automata();
