@@ -5,13 +5,13 @@ import sys
 r = random.SystemRandom()
 
 def generator():
-    #n = r.choice(list(range(4, 100)))
-    n = 5
+    n = sys.argv[1]
     n_final_states = r.choice(list(range(1, int(n/5+1))))
 
     states = list(range(0, n))
 
     final_states = r.sample(states, n_final_states)
+    #init_state = r.choice(states)
     init_state = r.choice([s for s in states if s not in final_states])
 
     filename = "generated/aut_" + str(i+1) + ".txt"
@@ -30,6 +30,6 @@ def generator():
     file.close()
 
 
-for i in range(0, int(sys.argv[1])):
+for i in range(0, int(sys.argv[2])):
     generator()
     

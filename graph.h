@@ -859,7 +859,6 @@ struct Automata
     {
         Automata* renamed = new Automata;
         Automata* lastRenamed = new Automata;
-
         renamed = (getTranspose()->NFAtoDFA());
         renombramiento(renamed);
 

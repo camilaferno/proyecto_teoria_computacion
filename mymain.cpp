@@ -6,7 +6,7 @@ using namespace std;
 
 main(int argc, char const *argv[])
 {
-    automata* aut = new automata("fern2.txt");
+    automata* aut = new automata("e2_aut_1.txt");
     aut->print();
     cout << endl;
     
@@ -31,12 +31,19 @@ main(int argc, char const *argv[])
     cout << "EQUIPLAZ" << endl;
     for (int i = 0; i < aut->numberOfStates; i++)
     {
+        cout << aut->states[i]->data << " ";
         for (int j = 0; j < aut->numberOfStates; j++)
         {
             cout << m_2[i][j] << " ";
         }   
         cout << endl;
     }
+    cout << "  ";
+    for (int i = 0; i < aut->numberOfStates; i++)
+    {
+        cout << aut->states[i]->data << " ";
+    }
+    cout << endl;
 
     cout << endl;
     cout << "MUR" << endl;
