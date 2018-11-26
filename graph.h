@@ -12,6 +12,7 @@
 #include <set>
 #include <queue>
 #include <map>
+#include <algorithm>
 
 #include "state.h"
 #include "transition.h"
@@ -47,10 +48,11 @@ struct Automata
 
     Automata() {}
 
-    vector<string> split(string phrase, string delimiter){
+    vector<string> split(string phrase, string delimiter)
+    {
         vector<string> list;
         string s = string(phrase);
-        size_t pos = 0;
+        int pos = 0;
         string token;
         while ((pos = s.find(delimiter)) != string::npos)
         {
@@ -80,7 +82,7 @@ struct Automata
             initState = new state(fileInitState);
             initStates.push_back(initState);
 
-            for(size_t i = 3; i < vectorFirstLine.size(); i++)
+            for(int i = 3; i < vectorFirstLine.size(); i++)
             {
                 state* newState = new state(vectorFirstLine[i]);
                 states.push_back(newState);
@@ -112,6 +114,7 @@ struct Automata
             }
 
             automataFile.close();
+            sortAllStates();
         }
         else cout << "Error" << endl;
     };
@@ -120,6 +123,30 @@ struct Automata
     {
         state* newState = new state(data);
         states.push_back(newState);
+    }
+
+    // Comparador de estados para hacer sort
+    // La función sort es la que viene con la STL y se ejecuta con:
+    // states.sort(stateCmp());
+    struct StateCmp
+    {
+        bool operator()(const state* a, const state* b)
+        {
+            try
+            {
+                return (stoi(a->data) < stoi(b->data));
+            }
+            catch(exception& e)
+            {
+                return (a->data < b->data);
+            }
+        }
+    };
+
+    void sortAllStates()
+    {
+        sort(states.begin(), states.end(), StateCmp());
+        sort(finalStates.begin(), finalStates.end(), StateCmp());
     }
 
     bool isState(S data)
@@ -901,137 +928,284 @@ struct Automata
 
     PairOfStates* findPairOfStates(state* first, state* second, vector<PairOfStates*> &where)
     {
-        for(size_t i = 0; i < where.size(); i++)
+        for(int i = 0; i < where.size(); i++)
             if (where[i]->first == first && where[i]->second == second) return where[i];
 
         return nullptr;
     }
 
-    void equivalence_improved()
+    vector<vector<bool>> equivalence_improved()
     {
-        vector<vector<bool>> distinctMatrix(numberOfStates, vector<bool>(numberOfStates, 1));
+        const bool dist = 0;
+        const bool no_dist = 1;
+
+        vector<vector<bool>> distinctMatrix(numberOfStates, vector<bool>(numberOfStates, no_dist));
         vector<PairOfStates*> pairs;
         queue<PairOfStates*> pairQueue;
         map<state*, int> stateLocation;
 
-        for(size_t i = 0; i < numberOfStates; i++)
+        // Producto cartesiano entre el vector de estados para crear cada par posible
+        for(int i = 0; i < numberOfStates; i++)
         {
             stateLocation[states[i]] = i;
-            for(size_t j = 0; j < numberOfStates; j++)
+            for(int j = 0; j < numberOfStates; j++)
             {
                 PairOfStates* newPair = new PairOfStates(states[i], states[j]);
                 pairs.push_back(newPair);
             }
         }
 
-        for(size_t i = 0; i < pairs.size(); i++)
+        // Asignación de dependencias para cada par
+        for(int i = 0; i < pairs.size(); i++)
         {
             PairOfStates* &pair = pairs[i];
-            PairOfStates* dependency0 = findPairOfStates(pairs[i]->first->transitions[0]->stateEnd,
+            PairOfStates* transitionPair0 = findPairOfStates(pairs[i]->first->transitions[0]->stateEnd,
                                                         pairs[i]->second->transitions[0]->stateEnd,
                                                         pairs);
 
-            PairOfStates* dependency1 = findPairOfStates    (pairs[i]->first->transitions[1]->stateEnd,
-                                                            pairs[i]->second->transitions[1]->stateEnd,
-                                                            pairs);
+            PairOfStates* transitionPair1 = findPairOfStates(pairs[i]->first->transitions[1]->stateEnd,
+                                                        pairs[i]->second->transitions[1]->stateEnd,
+                                                        pairs);
 
-            if (dependency0)
-                pair->dependencies.push_back(dependency0);
-            else
-                pair->addDependency(pairs[i]->first->transitions[0]->stateEnd,
-                                    pairs[i]->second->transitions[0]->stateEnd);
-
-            if (dependency1)
-                pair->dependencies.push_back(dependency1);
-            else
-                pair->addDependency(pairs[i]->first->transitions[1]->stateEnd,
-                                    pairs[i]->second->transitions[1]->stateEnd);
-
+            transitionPair0->dependencies.push_back(pair);
+            transitionPair1->dependencies.push_back(pair);
         }
 
-        // Inicializa con 1 los pares (p,q) donde p es estado final y q no
-        for(size_t i = 0; i < numberOfStates; i++)
+        // Inicializa como distinguibles los pares (p,q) donde p es estado final y q no
+        for(int i = 0; i < numberOfStates; i++)
         {
             if (findState(states[i], finalStates))
             {
-                for(size_t j = 0; j < numberOfStates; j++)
+                for(int j = 0; j < numberOfStates; j++)
                 {
-                    if (states[j] != states[i] || findState(states[j], finalStates) == 0)
+                    if (states[j] != states[i] && findState(states[j], finalStates) == nullptr)
                     {
-                        distinctMatrix[i][j] = 0;
-                        distinctMatrix[j][i] = 0;
+                        distinctMatrix[i][j] = dist;
+                        distinctMatrix[j][i] = dist;
+                        pairQueue.push(findPairOfStates(states[i], states[j], pairs)); 
                     }
                 }
             }
         }
 
-        for (size_t i = 0; i < pairs.size(); i++)
-        {
-            PairOfStates* &pair = pairs[i];
-            int pairFirstLocation = stateLocation[pair->first];
-            int pairSecondLocation = stateLocation[pair->second];
-
-            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
-            {
-                vector<PairOfStates*> &listOfDependencies = pair->dependencies;
-                for (size_t j = 0; j < listOfDependencies.size(); j++)
-                {
-                    PairOfStates* &currentDependency = listOfDependencies[j];
-                    int depFirstLocation = stateLocation[currentDependency->first];
-                    int depSecondLocation = stateLocation[currentDependency->second];
-
-                    if (distinctMatrix[depFirstLocation][depSecondLocation] == 1 && depFirstLocation != depSecondLocation)
-                    {
-                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = 0;
-                        pairQueue.push(currentDependency);
-                    }
-                }
-                break;
-            }
-        }
         while (!pairQueue.empty())
         {
             PairOfStates* pair = pairQueue.front();
+
             int pairFirstLocation = stateLocation[pair->first];
             int pairSecondLocation = stateLocation[pair->second];
 
-            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == 0)
+            if (distinctMatrix[pairFirstLocation][pairSecondLocation] == dist)
             {
                 vector<PairOfStates*> &listOfDependencies = pair->dependencies;
-                for (size_t j = 0; j < listOfDependencies.size(); j++)
+                for (int j = 0; j < listOfDependencies.size(); j++)
                 {
                     PairOfStates* &currentDependency = listOfDependencies[j];
                     int depFirstLocation = stateLocation[currentDependency->first];
                     int depSecondLocation = stateLocation[currentDependency->second];
 
-                    if (distinctMatrix[depFirstLocation][depSecondLocation] == 1 && depFirstLocation != depSecondLocation)
+                    if (distinctMatrix[depFirstLocation][depSecondLocation] != dist && depFirstLocation != depSecondLocation)
                     {
-                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = 0;
+                        distinctMatrix[depFirstLocation][depSecondLocation] = distinctMatrix[depSecondLocation][depFirstLocation] = dist;
                         pairQueue.push(currentDependency);
-                    }else
-                    {
-                        if (!pairQueue.empty())pairQueue.pop();
                     }
                 }
             }
-
+            pairQueue.pop();
         }
 
-        for(size_t i = 0; i < numberOfStates; i++)
-        {
-            cout << states[i]->data << " ";
-            for(size_t j = 0; j <= i; j++)
-                cout << distinctMatrix[i][j] << " ";
-            cout << endl;
-        }
-
-        cout << "  ";
-        for(size_t i = 0; i < numberOfStates; i++)
-            cout << states[i]->data << " ";
-        cout << endl;
-
+        return distinctMatrix;
     }
 
+    self* moore()
+    {
+        vector<vector<bool>> distinctMatrix = equivalence_improved();
+        const bool dist = 0;
+        const bool no_dist = 1;
+        
+        vector<vector<state*>> sets;
+
+        // Armando sets
+        for (int i = 0; i < states.size(); i++)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (distinctMatrix[i][j] == no_dist)
+                {   
+                    if (sets.size() == 0)
+                    {
+                        vector<state*> newSet;
+                        newSet.push_back(states[j]);
+                        newSet.push_back(states[i]);
+                        sets.push_back(newSet);
+                    }
+                    else
+                    {
+                        bool found = false;
+                        for (int k = 0; k < sets.size() && !found; k++)
+                        {
+                            state* isStateOneInSet = findState(states[i], sets[k]);
+                            state* isStateTwoInSet = findState(states[j], sets[k]);
+                            if (isStateOneInSet != nullptr || isStateTwoInSet != nullptr)
+                            {
+                                if (isStateOneInSet == nullptr)
+                                    sets[k].push_back(states[i]);
+                                if (isStateTwoInSet == nullptr)
+                                    sets[k].push_back(states[j]);
+                                found = true;
+                            }
+                        }
+                        if (!found)
+                        {
+                            vector<state*> newSet;
+                            newSet.push_back(states[j]);
+                            newSet.push_back(states[i]);
+                            sets.push_back(newSet);
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < states.size(); i++)
+        {
+            bool found = false;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(states[i], sets[j]) != nullptr)
+                    found = true;
+            }
+            if (!found)
+            {
+                vector<state*> newSet;
+                newSet.push_back(states[i]);
+                sets.push_back(newSet);
+            }
+        }
+
+        // DEBUG: Print sets
+        /* for (int i = 0; i < sets.size(); i++)
+        {
+            cout << "{";
+            for (int j = 0; j < sets[i].size(); j++)
+                {
+                    cout << sets[i][j]->data;
+                    if (j != sets[i].size() - 1)
+                        cout << ",";
+                }
+            cout << "}, ";
+        }
+        cout << endl; */
+
+        self* reduced_automata = new self();
+        reduced_automata->numberOfStates = sets.size();
+        
+        // Añadiendo estados
+        for (int i = 0; i < sets.size(); i++)
+        {
+            state* newState = new state();
+            string newData = "";
+
+            for (int j = 0; j < sets[i].size(); j++)
+            {
+                newData += sets[i][j]->data;
+                if (j != sets[i].size() - 1)
+                    newData += ",";
+            }
+
+            newState->data = "[" + newData + "]";
+            reduced_automata->states.push_back(newState);
+        }
+
+        // Añadiendo transiciones
+        for (int i = 0; i < sets.size(); i++)
+        {
+            state* &stateA = sets[i][0];
+            state* &stateB_0 = stateA->transitions[0]->stateEnd;
+
+            int stateB_0_Index = -1;
+
+            bool found = false;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(stateB_0, sets[j]) != nullptr)
+                {
+                    found = true;
+                    stateB_0_Index = j;
+                }
+            }
+
+            state* &stateB_1 = stateA->transitions[1]->stateEnd;
+
+            int stateB_1_Index = -1;
+
+            found = false;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(stateB_1, sets[j]) != nullptr)
+                {
+                    found = true;
+                    stateB_1_Index = j;
+                }
+            }
+
+            reduced_automata->states[i]->addTransition("0", reduced_automata->states[i], reduced_automata->states[stateB_0_Index]);
+            reduced_automata->states[i]->addTransition("1", reduced_automata->states[i], reduced_automata->states[stateB_1_Index]);
+        }
+
+        
+
+        // DEBUG: Transiciones del nuevo automata
+        /* for (int i = 0; i < reduced_automata->states.size(); i++)
+        {
+            cout << reduced_automata->states[i]->data << " | ";
+            for (int j = 0; j < reduced_automata->states[i]->transitions.size(); j++)
+            {
+                cout << reduced_automata->states[i]->transitions[j]->stateEnd->data << " ";
+            }
+            cout << endl;
+        }
+        cout << endl; */
+
+        // Añadiendo estado inicial
+        bool found = false;
+        int indexOfInitState = -1;
+        for (int i = 0; i < sets.size() && !found; i++)
+        {
+            if (findState(initState, sets[i]))
+            {
+                found = true;
+                indexOfInitState = i;
+            }
+        }
+
+        reduced_automata->initState = reduced_automata->states[indexOfInitState];
+
+        // Añadiendo estados finales
+        for (int i = 0; i < finalStates.size(); i++)
+        {
+            bool found = false;
+            int indexOfFinalState = -1;
+            for (int j = 0; j < sets.size() && !found; j++)
+            {
+                if (findState(finalStates[i], sets[j]))
+                {
+                    found = true;
+                    indexOfFinalState = j;
+                }
+            }
+
+            state* &newFinalState = reduced_automata->states[indexOfFinalState];
+
+            if(findState(newFinalState, reduced_automata->finalStates) == nullptr)
+                reduced_automata->finalStates.push_back(newFinalState);
+        }
+
+        reduced_automata->numberOfFinalStates = reduced_automata->finalStates.size();
+        
+
+        return reduced_automata;
+    }
 
     void print()
     {
@@ -1051,9 +1225,9 @@ struct Automata
         }
         cout << endl;
 
-        for(size_t i = 0; i < states.size(); i++)
+        for(int i = 0; i < states.size(); i++)
         {
-            for(size_t j = 0; j < states[i]->transitions.size(); j++)
+            for(int j = 0; j < states[i]->transitions.size(); j++)
             {
                 cout << states[i]->transitions[j]->stateBegin->data << " ";
                 cout << states[i]->transitions[j]->transitionChar << " ";
@@ -1064,7 +1238,6 @@ struct Automata
                 cout << endl;
             }
         }
-
     }
 
     void printNFA()
