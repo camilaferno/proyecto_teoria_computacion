@@ -11,8 +11,8 @@ def generator():
 
     states = list(range(0, n))
 
-    init_state = r.choice(states)
     final_states = r.sample(states, n_final_states)
+    init_state = r.choice([s for s in states if s not in final_states])
 
     filename = "generated/aut_" + str(i+1) + ".txt"
     file = open(filename, "w+")
