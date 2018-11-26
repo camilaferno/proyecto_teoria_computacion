@@ -9,10 +9,45 @@ main(int argc, char const *argv[])
     automata* aut = new automata("fern2.txt");
     aut->print();
     cout << endl;
-    //aut->equivalence_improved();
     
-    aut->Hopcroft();
+    automata* brz = aut->Brzozowski();
+    cout << "BRO" << endl;
+    brz->printNFA();
+
+    vector<vector<bool>> m = aut->Equivalencia();
+    cout << "EQ1" << endl;
+    for (int i = 0; i < aut->numberOfStates; i++)
+    {
+        for (int j = 0; j < aut->numberOfStates; j++)
+        {
+            cout << m[i][j] << " ";
+        }   
+        cout << endl;
+    }
+
+    cout << endl;
     
+    vector<vector<bool>> m_2 = aut->equivalence_improved();
+    cout << "EQUIPLAZ" << endl;
+    for (int i = 0; i < aut->numberOfStates; i++)
+    {
+        for (int j = 0; j < aut->numberOfStates; j++)
+        {
+            cout << m_2[i][j] << " ";
+        }   
+        cout << endl;
+    }
+
+    cout << endl;
+    cout << "MUR" << endl;
+    automata* mur = aut->moore();
+    mur->print();
+
+    cout << endl;
+    cout << "JOP" << endl;
+    automata* hopboi = aut->Hopcroft();
+    hopboi->print();
+
 
     return 0;
 }

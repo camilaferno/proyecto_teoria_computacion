@@ -98,12 +98,10 @@ struct Automata
 
                 if(!isState(vectorLine[0]))
                 {
-                    cout << " state0: " << vectorLine[0];
                     addState(vectorLine[0]);
                 }
                 if(!isState(vectorLine[2]))
                 {
-                    cout << " state2: " << vectorLine[2];
                     addState(vectorLine[2]);
                 }
 
@@ -259,7 +257,7 @@ struct Automata
 
         for(si = states.begin(); si != states.end(); ++si)
         {
-            cout << (*si)->data;
+             
             transpose->numberOfStates += 1;
             transpose->addState((*si)->data);
         }
@@ -282,10 +280,7 @@ struct Automata
 
         transpose->numberOfFinalStates = transpose->finalStates.size();
         transpose->initState = finalStates.front();
-
-        cout << "Transpuesto: " << endl;
-        transpose->printNFA();
-        cout << endl;
+         
         return transpose;
     }
 
@@ -317,7 +312,7 @@ struct Automata
         }
     }
 
-    void Equivalencia()
+    vector<vector<bool>> Equivalencia()
     {
         vector<vector<bool>> matrix(numberOfStates, vector<bool>(numberOfStates, 1));
 
@@ -384,19 +379,7 @@ struct Automata
             }
         }
 
-        // cout << "Equivalencia: " << endl;
-        for (int i = 0; i < numberOfStates; i++)
-        {
-            if (i > 0)
-                cout << states[i]->data << " ";
-            for (int j = 0; j < i; j++)
-                cout << matrix[i][j] << " ";
-            cout << endl;
-        }
-        cout << "  ";
-        for (int i = 0; i < numberOfStates; i++)
-            cout << states[i]->data << " ";
-        cout << endl;
+        return matrix;
     };
     
     self* Hopcroft()
@@ -487,7 +470,7 @@ struct Automata
             j = 0;
             for (typename set<set<state*>>::iterator it2 = P.begin(); it2 != P.end() && !found; ++it2)
             {
-                if ((*it2).find(stateB_0) != (*it2).end())
+                if ((*it2).find(stateB_1) != (*it2).end())
                 {
                     found = true;
                     stateB_1_Index = j;
@@ -503,15 +486,20 @@ struct Automata
         bool found = false;
         int indexOfInitState = -1;
         i = 0;
-        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end() && !found; ++it)
+        for (typename set<set<state*>>::iterator it = P.begin(); it != P.end()  && !found; ++it)
         {
-            if ((*it).find(initState) != (*it).end())
+            for (typename set<state*>::iterator it2 = (*it).begin(); it2 != (*it).end() && !found; ++it2)
             {
-                found = true;
-                indexOfInitState = i;
+                if ((*it2)->data == initState->data)
+                {
+                    found = true;
+                    indexOfInitState = i;
+                }
+                
             }
             i++;
         }
+        cout << endl;
 
         reduced_automata->initState = reduced_automata->states[indexOfInitState];
 
@@ -564,7 +552,6 @@ struct Automata
 
         convertedToDFA->addState(init);
         convertedToDFA->initStates.push_back(convertedToDFA->findState(init));
-        cout << "Init: " << init;
         if(init.find(",") !=  string::npos)
         {
             string tmpInit;
@@ -761,8 +748,6 @@ struct Automata
                         sort_string(newNode2);
                     }
 
-                    // cout << "Current: " << current << " NewNode1: " << newNode1 << " NewNode2: " << newNode2 << endl;
-
                     if(!convertedToDFA->isState(newNode1))
                     {
                         bool isSalida1 = false;
@@ -835,17 +820,7 @@ struct Automata
 
             }
         }
-
-        /* while (!renamedTo.empty())
-        {
-            std::cout << renamedTo.begin()->first << " => " << renamedTo.begin()->second << '\n';
-            renamedTo.erase(renamedTo.begin());
-        }
-        */
-        cout << convertedToDFA->numberOfFinalStates << " ";
-        cout << "NFA to DFA: " << endl;
-        convertedToDFA->printNFA();
-        cout << endl;
+        
         return convertedToDFA;
     }
 
@@ -858,10 +833,6 @@ struct Automata
           renamedTo.insert(pair<string, int>((*it)->data, count));
           count +=1;
         }
-
-        for (std::map<string,int>::iterator ti=renamedTo.begin(); ti!=renamedTo.end(); ++ti)
-        std::cout << ti->first << " => " << ti->second << '\n';
-        cout << endl;
 
         ostringstream int_to_string;
 
@@ -882,29 +853,20 @@ struct Automata
           }
 
         }
-        cout << endl;
-
     }
 
     Automata* Brzozowski()
     {
-        Automata* brzozowski = new Automata();
         Automata* renamed = new Automata;
         Automata* lastRenamed = new Automata;
 
         renamed = (getTranspose()->NFAtoDFA());
         renombramiento(renamed);
-        cout << "Renamed NFAtoDFA" << endl;
-        renamed->printNFA();
 
         lastRenamed = (renamed->getTranspose())->NFAtoDFA();
         renombramiento(lastRenamed);
 
-        brzozowski= lastRenamed;
-
-        brzozowski->printNFA();
-
-        return brzozowski;
+        return lastRenamed;
     }
 
     struct PairOfStates
@@ -1083,20 +1045,6 @@ struct Automata
             }
         }
 
-        // DEBUG: Print sets
-        /* for (int i = 0; i < sets.size(); i++)
-        {
-            cout << "{";
-            for (int j = 0; j < sets[i].size(); j++)
-                {
-                    cout << sets[i][j]->data;
-                    if (j != sets[i].size() - 1)
-                        cout << ",";
-                }
-            cout << "}, ";
-        }
-        cout << endl; */
-
         self* reduced_automata = new self();
         reduced_automata->numberOfStates = sets.size();
         
@@ -1153,20 +1101,6 @@ struct Automata
             reduced_automata->states[i]->addTransition("1", reduced_automata->states[i], reduced_automata->states[stateB_1_Index]);
         }
 
-        
-
-        // DEBUG: Transiciones del nuevo automata
-        /* for (int i = 0; i < reduced_automata->states.size(); i++)
-        {
-            cout << reduced_automata->states[i]->data << " | ";
-            for (int j = 0; j < reduced_automata->states[i]->transitions.size(); j++)
-            {
-                cout << reduced_automata->states[i]->transitions[j]->stateEnd->data << " ";
-            }
-            cout << endl;
-        }
-        cout << endl; */
-
         // Añadiendo estado inicial
         bool found = false;
         int indexOfInitState = -1;
@@ -1209,12 +1143,6 @@ struct Automata
 
     void print()
     {
-        for(si = states.begin(); si != states.end(); si++)
-        {
-            cout << (*si)->data << " ";
-        }
-        cout << endl;
-
         cout << numberOfStates << " " << initState->data << " " << numberOfFinalStates << " ";
 
         for (si = finalStates.begin(); si != finalStates.end(); ++si)
